@@ -1,0 +1,1106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ATU Simulation Hospital — Medication Administration</title>
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+<style>
+:root{--green:#0d4b32;--green2:#176b49;--gold:#d7aa29;--bg:#eef2f4;--line:#aebbc3;--ink:#18242c;--muted:#5e6e78;--red:#a82434;--redbg:#fff0f2;--ok:#176f49;--okbg:#eaf7ef;--warn:#8a6715;--warnbg:#fff7d6}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--ink)}
+button,input,select,textarea{font:inherit}button{cursor:pointer}
+header{background:var(--green);color:#fff;padding:12px 16px;border-bottom:4px solid var(--gold);display:flex;justify-content:space-between;align-items:center}
+header h1{font-size:19px;margin:0}header small{display:block;font-weight:normal;opacity:.85;margin-top:3px}
+.badge{padding:5px 8px;border-radius:12px;background:#ffffff22;font-size:12px}.badge.saved{background:#dff4e7;color:#125c3b}.badge.error{background:#ffe2e5;color:#8a1d2c}.storageHelp{border:1px solid var(--line);background:#f7fafb;padding:10px;margin-top:10px}
+.layout{display:grid;grid-template-columns:270px 1fr;min-height:calc(100vh - 68px)}
+aside{background:#173f32;color:#fff;padding:12px}
+aside button{display:block;width:100%;text-align:left;border:0;background:transparent;color:#fff;padding:10px;border-radius:4px;margin:2px 0}
+aside button.active,aside button:hover{background:#2b6b53}
+main{min-width:0;padding:14px}.panel{background:#fff;border:1px solid var(--line);border-radius:5px;margin-bottom:12px;box-shadow:0 1px 2px #0001}
+.panel h2{margin:0;background:#dde5e9;padding:9px 11px;border-bottom:1px solid var(--line);font-size:17px;color:#254451}
+.body{padding:12px}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+label{font-size:12px;font-weight:800}input,select,textarea{width:100%;padding:9px;border:1px solid #91a1ab;border-radius:3px;margin-top:4px}
+textarea{min-height:100px}.primary{background:var(--green2);color:#fff;border:0;padding:9px 13px;border-radius:4px;font-weight:800}.secondary{background:#e6ecef;border:1px solid #91a1ab;padding:8px 12px;border-radius:4px}
+.scanStep{border:2px solid #9eacb5;background:#fafcfd;padding:12px;border-radius:5px}.scanStep.complete{border-color:var(--ok);background:var(--okbg)}.scanStep.error{border-color:var(--red);background:var(--redbg)}
+.scanStep h3{margin:0 0 7px}.feedback{margin-top:8px;padding:8px;border-radius:4px;font-weight:800}.feedback.ok{background:var(--okbg);color:var(--ok)}.feedback.bad{background:var(--redbg);color:var(--red)}.feedback.warn{background:var(--warnbg);color:var(--warn)}
+.patientBanner{background:#fff;border:2px solid var(--green2);padding:10px;margin-bottom:12px}.patientBanner h2{margin:0;color:var(--green)}.patientMeta{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:8px;font-size:13px}.patientMeta span{display:block;color:var(--muted);font-size:10px;text-transform:uppercase;font-weight:800}
+.allergy{color:var(--red);font-weight:900}.safety{padding:10px;border:2px solid var(--red);background:var(--redbg);color:var(--red);font-weight:900;margin:8px 0}.success{padding:10px;border:2px solid var(--ok);background:var(--okbg);color:var(--ok);font-weight:900;margin:8px 0}
+.checks{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.check{display:flex;gap:8px;align-items:flex-start;border:1px solid var(--line);padding:8px;background:#fbfcfd}.check input{width:auto;margin:2px 0 0}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{border:1px solid var(--line);padding:8px;text-align:left;vertical-align:top}th{background:#e7ecef}
+.hidden{display:none!important}.barcodeCard{border:1px solid var(--line);padding:10px;margin:8px 0;background:#fff}
+.labelControls{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0}
+.labelPreview{border:1px dashed var(--line);padding:8px;background:#fafcfd;display:inline-block;max-width:100%}
+.compactNote{font-size:11px;color:var(--muted);margin-top:5px}.actions{display:flex;gap:7px;flex-wrap:wrap}
+.note{font-size:12px;color:var(--muted)}.modeBanner{padding:8px;background:#e9eef1;border:1px solid var(--line);margin-bottom:10px;font-size:12px}
+
+.builderTabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.builderTabs button{border:1px solid var(--line);background:#e7ecef;padding:8px 11px;border-radius:4px}
+.builderTabs button.active{background:var(--green2);color:white;border-color:var(--green2)}
+.sectionTitle{margin:18px 0 8px;color:var(--green)}
+.patientCards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.patientCard{border:1px solid var(--line);border-left:6px solid var(--green2);background:#fff;padding:12px;border-radius:5px}
+.patientCard.inactive{opacity:.65;border-left-color:#7b8991}
+.patientCard h3{margin:0 0 6px;color:var(--green)}
+.patientCardMeta{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;font-size:12px;margin:8px 0}
+.patientCardMeta span{display:block;color:var(--muted);font-size:10px;text-transform:uppercase;font-weight:800}
+.resetBox{border:2px solid var(--warn);background:var(--warnbg);padding:10px;margin-top:10px}
+@media(max-width:650px){.patientCards{grid-template-columns:1fr}}
+.editRow{background:#fffdf0}
+.dangerBtn{background:var(--red);color:white;border:0;padding:8px 11px;border-radius:4px}
+.smallBtn{padding:5px 8px;font-size:12px}
+.wide{grid-column:1/-1}
+@media(max-width:820px){.layout{display:block}.patientMeta,.grid3{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.grid,.grid3,.checks,.patientMeta{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+ <div><h1>ATU Simulation Hospital</h1><small>Embedded Medication Administration & Barcode Verification</small></div>
+ <div style="display:flex;gap:8px;align-items:center"><span class="badge" id="saveStatusBadge">Checking storage…</span><span class="badge" id="connectionBadge">Local Demonstration Mode</span></div>
+</header>
+<div class="layout">
+<aside>
+ <button data-view="patients" class="active">Active Patients</button>
+ <button data-view="builder">Faculty Builder</button>
+ <button data-view="admin">Medication Administration</button>
+ <button data-view="mar">Patient MAR</button>
+ <button data-view="glucose">Blood Glucose & Insulin</button>
+ <button data-view="blood">Blood Administration</button>
+ <button data-view="bloodBuilder">Blood Product Builder</button>
+ <button data-view="barcodes">Barcode Center</button>
+ <button data-view="history">Administration History</button>
+ <button data-view="settings">Notion Connection</button>
+</aside>
+<main>
+ <div id="patientBanner" class="patientBanner hidden"></div>
+ <section id="view"></section>
+</main>
+</div>
+<script>
+const SEED_PATIENTS=[{"id": "amelia-sung", "name": "Amelia Sung", "mrn": "SIM-201036", "dob": "12/08/XXXX", "room": "201", "provider": "Dr. Darnell", "allergies": ["penicillin", "shellfish"], "weightKg": 82, "barcode": "PT-SIM-201036", "active": true, "bloodType": "O+", "codeStatus": "Full Code"}, {"id": "jane-fowler", "name": "Jane Fowler", "mrn": "SIM-204051", "dob": "01/28/XXXX", "room": "204", "provider": "Dr. Smith", "allergies": ["nkda"], "weightKg": 60, "barcode": "PT-SIM-204051", "active": true, "bloodType": "A+", "codeStatus": "Full Code"}, {"id": "patient-1784228779067-hszw6", "name": "Fatima Sanogo", "mrn": "201038", "dob": "07/08/xx", "room": "211E", "provider": "Nelson", "weightKg": 71, "allergies": ["nkda"], "barcode": "PT-201038", "active": true, "bloodType": "", "codeStatus": "Full Code"}, {"id": "patient-1784228856986-9te05", "name": "Molly Thomas", "mrn": "20139", "dob": "07/05/xx", "room": "211C", "provider": "Henderson", "weightKg": 7, "allergies": ["nkda"], "barcode": "PT-20139", "active": true, "bloodType": "", "codeStatus": "Full Code"}, {"id": "patient-1784228908856-n5jsk", "name": "Stephanie Smith", "mrn": "201040", "dob": "07/14/xxxx", "room": "211E", "provider": "Henderson", "weightKg": 53.5, "allergies": ["nkda"], "barcode": "PT-201040", "active": true, "bloodType": "", "codeStatus": "Full Code"}, {"id": "patient-1784231132217-vm9de", "name": "Charles Jones", "mrn": "201041", "dob": "04/20/xx", "room": "211A", "provider": "Burris", "weightKg": 82, "allergies": ["nkda"], "barcode": "PT-201041", "active": true, "bloodType": "", "codeStatus": "Full Code"}, {"id": "patient-1784232786877-est66", "name": "BABY BOY  SUNG", "mrn": "201042", "dob": "TODAY", "room": "211E", "provider": "Craig", "weightKg": 4.37, "allergies": ["nkda"], "barcode": "PT-201042", "active": true, "bloodType": "", "codeStatus": "Full Code"}];
+const SEED_MEDS=[{"id": "cefazolin-2g", "patientId": "jane-fowler", "name": "Ancef (Cefazolin)", "dose": "2 g", "route": "IVPB", "frequency": "On call to OR", "scheduledTime": "On call to OR", "status": "Due", "barcode": "MED-CEFAZOLIN-2G", "allergyKeywords": ["cefazolin", "cephalosporin", "penicillin"], "highAlert": false, "indication": "Surgical prophylaxis", "initialStatus": "Due", "medType": "Scheduled", "provider": "Smith", "notes": "Ancef (Cefazolin) 2 grams IV on call to OR (at 1 hour rate)", "isInsulin": false}, {"id": "metoclopramide-10", "patientId": "jane-fowler", "name": "Reglan (Metoclopramide)", "dose": "10 mg", "route": "IV", "frequency": "On call to OR", "scheduledTime": "On call to OR", "status": "Due", "barcode": "MED-METOCLOPRAMIDE-10MG", "allergyKeywords": ["metoclopramide"], "highAlert": false, "indication": "Preoperative nausea prevention", "initialStatus": "Due", "medType": "Scheduled", "provider": "Smith", "notes": "Reglan (Metoclopramide) 10mg IV", "isInsulin": false}, {"id": "oxytocin", "patientId": "amelia-sung", "name": "Oxytocin", "dose": "Per protocol", "route": "IV infusion", "frequency": "Continuous", "scheduledTime": "Active labor", "status": "Due", "barcode": "MED-OXYTOCIN-INFUSION", "allergyKeywords": ["oxytocin"], "highAlert": true, "indication": "Labor augmentation", "initialStatus": "Due", "medType": "Scheduled", "provider": "", "notes": "", "isInsulin": false}, {"id": "ampicillin", "patientId": "amelia-sung", "name": "Ampicillin", "dose": "2 g", "route": "IVPB", "frequency": "Every 4 hours", "scheduledTime": "0800", "status": "Due", "barcode": "MED-AMPICILLIN-2G", "allergyKeywords": ["ampicillin", "penicillin"], "highAlert": false, "indication": "GBS prophylaxis", "initialStatus": "Due", "medType": "Scheduled", "provider": "", "notes": "", "isInsulin": false}, {"id": "med-1784226784431-mnlv2", "patientId": "amelia-sung", "medType": "Scheduled", "name": "Morphine Sulfate", "dose": "2 mg", "route": "IV", "frequency": "Q 2 hours", "scheduledTime": "prn", "indication": "Pain", "provider": "Darnell", "status": "Due", "initialStatus": "Due", "allergyKeywords": [], "highAlert": false, "barcode": "MED-MORPHINE-SULFATE-2-MG-SIM-201036", "notes": "", "isInsulin": false}, {"id": "med-1784226890085-0tkri", "patientId": "amelia-sung", "medType": "Scheduled", "name": "Lidocaine 1%", "dose": "per MD", "route": "Subcutaneous", "frequency": "as needed", "scheduledTime": "at delivery", "indication": "", "provider": "Darnell", "status": "Due", "initialStatus": "Due", "allergyKeywords": [], "highAlert": false, "barcode": "MED-LIDOCAINE-1-PER-MD-SIM-201036", "notes": "Lidocaine 1% available at delivery for pain in perineum", "isInsulin": false}, {"id": "med-1784227218757-opurb", "patientId": "amelia-sung", "medType": "Scheduled", "name": "Versed (Midazolam)", "dose": "1 mg", "route": "IV", "frequency": "now", "scheduledTime": "0800", "indication": "", "provider": "Smith", "status": "Due", "initialStatus": "Due", "allergyKeywords": [], "highAlert": false, "barcode": "MED-VERSED-MIDAZOLAM-1-MG-SIM-201036", "notes": "Versed (Midazolam) 1mg IV on call to OR", "isInsulin": false}, {"id": "med-1784228600541-qt0fp", "patientId": "jane-fowler", "medType": "PRN", "name": "Morphine Sulfate", "dose": "2 mg", "route": "IV", "frequency": "every 4 hours", "scheduledTime": "Post op", "indication": "for post of pain", "provider": "Smith", "status": "Due", "initialStatus": "Due", "allergyKeywords": [], "highAlert": false, "barcode": "MED-MORPHINE-SULFATE-2-MG-SIM-204051", "notes": "Morphine 2mg IV prn, may repeat up to 10 mg every 4 hours as needed for post op pain", "isInsulin": false}, {"id": "med-1784228659520-mqnzs", "patientId": "jane-fowler", "medType": "PRN", "name": "Zofran", "dose": "4mg", "route": "IV", "frequency": "every 4 hours", "scheduledTime": "post op", "indication": "prn nausea", "provider": "Smith", "status": "Due", "initialStatus": "Due", "allergyKeywords": [], "highAlert": false, "barcode": "MED-ZOFRAN-4MG-SIM-204051", "notes": "", "isInsulin": false}, {"id": "med-1784229027945-c7zui", "patientId": "jane-fowler", "medType": "Scheduled", "name": "Lactated Ringer", "dose": "125 ml/hr", "route": "IV", "frequency": "Continous", "scheduledTime": "0800", "indication": "", "provider": "Smith", "status": "Due", "initialStatus": "Due", "allergyKeywords": [], "highAlert": false, "barcode": "MED-LACTATED-RINGER-125-ML-HR-SIM-204051", "notes": "", "isInsulin": false}, {"id": "med-1784229111953-nbrzw", "patientId": "patient-1784228779067-hszw6", "medType": "Scheduled", "name": "Lactated Ringers", "dose": "125ml/h", "route": "IV", "frequency": "Continuous", "scheduledTime": "0800", "indication": "", "provider": "Nelson", "status": "Due", "initialStatus": "Due", "allergyKeywords": [], "highAlert": false, "barcode": "MED-LACTATED-RINGERS-125ML-H-201038", "notes": "", "isInsulin": false}, {"id": "med-1784229217472-1izfb", "patientId": "patient-1784228779067-hszw6", "medType": "Scheduled", "name": "Pitocin 30 units added to 500ml Normal Saline", "dose": "334 ml/hr for 30 mins then change to 95 mls per hour", "route": "IV", "frequency": "continuous", "scheduledTime": "0800", "indication": "", "provider": "Nelson", "status": "Due", "initialStatus": "Due", "allergyKeywords": [], "highAlert": false, "barcode": "MED-PITOCIN-30-UNITS-ADDED-TO-500ML-NORMAL-SALINE-334-ML-HR-FOR-30-MINS-THEN-CHANGE-TO-95-MLS-PER-HOUR-201038", "notes": "Pitocin 30 units added to 500ml Normal Saline to infuse at 334 ml/hr. after delivery of placenta for for 100 mls then decrease rate to 95mls per hour until bag is complete.  May saline lock IV 3 hours after delivery if bleeding is scant.", "isInsulin": false}, {"id": "med-1784229303003-frkz3", "patientId": "patient-1784228779067-hszw6", "medType": "PRN", "name": "Witch hazel pads", "dose": "2 pad rounds", "route": "Other", "frequency": "every time change a pad", "scheduledTime": "as needed", "indication": "applied to hemorrhoids prn", "provider": "Nelson", "status": "Due", "initialStatus": "Due", "allergyKeywords": [], "highAlert": false, "barcode": "MED-WITCH-HAZEL-PADS-2-PAD-ROUNDS-201038", "notes": "", "isInsulin": false}, {"id": "med-1784229402501-p5bap", "patientId": "patient-1784228779067-hszw6", "medType": "PRN", "name": "Epifoam spray", "dose": "2 sprays", "route": "Other", "frequency": "Every pad change", "scheduledTime": "as needed", "indication": "to perineum as needed for pain", "provider": "Nelson", "status": "Due", "initialStatus": "Due", "allergyKeywords": [], "highAlert": false, "barcode": "MED-EPIFOAM-SPRAY-2-SPRAYS-201038", "notes": "", "isInsulin": false}, {"id": "med-1784229511725-ier9a", "patientId": "patient-1784228779067-hszw6", "medType": "PRN", "name": "Percocet", "dose": "1 tab", "route": "PO", "frequency": "every 4 hours", "scheduledTime": "prn", "indication": "pain", "provider": "Nelson", "status": "Due", "initialStatus": "Due", "allergyKeywords": [], "highAlert": false, "barcode": "MED-PERCOCET-1-TAB-201038", "notes": "", "isInsulin": false}, {"id": "med-1784229566790-y6r3b", "patientId": "amelia-sung", "medType": "Scheduled", "name": "Ibuprofen", "dose": "600mg", "route": "PO", "frequency": "q 6 hours as needed for pain", "scheduledTime": "prn", "indication": "pain", "provider": "Nelson", "status": "Due", "initialStatus": "Due", "allergyKeywords": [], "highAlert": false, "barcode": "MED-IBUPROFEN-600MG-SIM-201036", "notes": "", "isInsulin": false}, {"id": "med-1784230008873-oi841", "patientId": "patient-1784228856986-9te05", "medType": "Scheduled", "name": "NS bolus", "dose": "20ml/KG  to infuse over 30 mins", "route": "IV", "frequency": "now", "scheduledTime": "0800", "indication": "", "provider": "Henderson", "status": "Due", "initialStatus": "Due", "allergyKeywords": [], "highAlert": false, "barcode": "MED-NS-BOLUS-20ML-KG-TO-INFUSE-OVER-30-MINS-20139", "notes": "", "isInsulin": false}, {"id": "med-1784230923472-7cufg", "patientId": "patient-1784228908856-n5jsk", "medType": "Scheduled", "name": "Morphine", "dose": "5mg IV", "route": "IV", "frequency": "every 4 hours", "scheduledTime": "0800", "indication": "prn pain", "provider": "Henderson", "status": "Due", "initialStatus": "Due", "allergyKeywords": [], "highAlert": false, "barcode": "MED-MORPHINE-5MG-IV-201040", "notes": "", "isInsulin": false}, {"id": "med-1784231287424-cajgk", "patientId": "patient-1784231132217-vm9de", "medType": "Scheduled", "name": "Lisinopril", "dose": "20mg", "route": "PO", "frequency": "DAILY", "scheduledTime": "0900", "indication": "", "provider": "BURRIS", "status": "Due", "initialStatus": "Due", "allergyKeywords": [], "highAlert": false, "barcode": "MED-LISINOPRIL-20MG-201041", "notes": "Lisinopril 20mg Po daily, hold if BP is less than 90/60. If you have to hold the medication, notify the provider.", "isInsulin": false}, {"id": "med-1784231342460-joo74", "patientId": "patient-1784231132217-vm9de", "medType": "Scheduled", "name": "Warfarin", "dose": "2.5 mg", "route": "PO", "frequency": "daily", "scheduledTime": "0900", "indication": "", "provider": "BURRIS", "status": "Due", "initialStatus": "Due", "allergyKeywords": [], "highAlert": false, "barcode": "MED-WARFARIN-2-5-MG-201041", "notes": "", "isInsulin": false}, {"id": "med-1784231396094-qbo8v", "patientId": "patient-1784231132217-vm9de", "medType": "Scheduled", "name": "Metformin", "dose": "1000 mg", "route": "PO", "frequency": "daily", "scheduledTime": "0900", "indication": "", "provider": "BURRIS", "status": "Due", "initialStatus": "Due", "allergyKeywords": [], "highAlert": false, "barcode": "MED-METFORMIN-1000-MG-201041", "notes": "", "isInsulin": false}, {"id": "med-1784231477665-g8imz", "patientId": "patient-1784231132217-vm9de", "medType": "Scheduled", "name": "Metoprolol", "dose": "50mg", "route": "PO", "frequency": "daily", "scheduledTime": "0900", "indication": "", "provider": "BURRIS", "status": "Due", "initialStatus": "Due", "allergyKeywords": [], "highAlert": false, "barcode": "MED-METOPROLOL-50MG-201041", "notes": "Metoprolol 50mg po daily hold if BP is less than 90/60, If you have to hold the medication, notify the provider.", "isInsulin": false}, {"id": "med-1784231513432-ev3bc", "patientId": "patient-1784231132217-vm9de", "medType": "Scheduled", "name": "Amiodarone", "dose": "200 MG", "route": "PO", "frequency": "dAILY", "scheduledTime": "0900", "indication": "", "provider": "BURRIS", "status": "Due", "initialStatus": "Due", "allergyKeywords": [], "highAlert": false, "barcode": "MED-AMIODARONE-200-MG-201041", "notes": "Amiodarone 200 mg po daily", "isInsulin": false}, {"id": "med-1784231562220-36ges", "patientId": "patient-1784231132217-vm9de", "medType": "Scheduled", "name": "Digoxin", "dose": "0.125 mg", "route": "PO", "frequency": "DAILY", "scheduledTime": "0900", "indication": "", "provider": "BURRIS", "status": "Due", "initialStatus": "Due", "allergyKeywords": [], "highAlert": false, "barcode": "MED-DIGOXIN-0-125-MG-SIM-201036", "notes": "Digoxin 0.125 mg PO do not give if heart rate is less than 50", "isInsulin": false}, {"id": "med-1784231658312-hytwb", "patientId": "patient-1784231132217-vm9de", "medType": "Scheduled", "name": "NORMAL SALINE", "dose": "25 ML/HR", "route": "IV infusion", "frequency": "CONTINUOUS", "scheduledTime": "0900", "indication": "", "provider": "BURRIS", "status": "Due", "initialStatus": "Due", "allergyKeywords": [], "highAlert": false, "barcode": "MED-NORMAL-SALINE-25-ML-HR-SIM-201036", "notes": "normal saline at KVO", "isInsulin": false}, {"id": "med-1784231885589-0kvib", "patientId": "patient-1784231132217-vm9de", "medType": "Scheduled", "name": "REGULAR INSULIN", "dose": "SEE SLIDING SCALE", "route": "Subcutaneous", "frequency": "AC AND HS", "scheduledTime": "0800", "indication": "", "provider": "BURRIS", "status": "Due", "initialStatus": "Due", "allergyKeywords": [], "highAlert": true, "barcode": "MED-REGULAR-INSULIN-SEE-SLIDING-SCALE-201041", "notes": "Sliding Scale Insulin (Regular or Rapid-Acting): BG < 150 \u2192 No insulin 150\u2013199 \u2192 2 units SQ 200\u2013249 \u2192 4 units SQ 250\u2013299 \u2192 6 units SQ 300\u2013349 \u2192 8 units SQ \u2265 350 \u2192 10 units SQ & notify provider", "isInsulin": true, "glucoseSchedule": ["AC Breakfast", "AC Lunch", "AC Dinner", "HS", "PRN"], "insulinScale": [{"min": 0, "max": 149, "dose": 0, "instruction": "No insulin"}, {"min": 150, "max": 199, "dose": 2, "instruction": "Give 2 units SQ"}, {"min": 200, "max": 249, "dose": 4, "instruction": "Give 4 units SQ"}, {"min": 250, "max": 299, "dose": 6, "instruction": "Give 6 units SQ"}, {"min": 300, "max": 349, "dose": 8, "instruction": "Give 8 units SQ"}, {"min": 350, "max": 9999, "dose": 10, "instruction": "Give 10 units SQ and notify provider"}]}, {"id": "med-1784233185643-eng9a", "patientId": "patient-1784232786877-est66", "medType": "Scheduled", "name": "Aquamephyton  (Vitamin K)", "dose": "1 mg", "route": "IM", "frequency": "now", "scheduledTime": "1300", "indication": "", "provider": "Criag", "status": "Due", "initialStatus": "Due", "allergyKeywords": [], "highAlert": false, "barcode": "MED-AQUAMEPHYTON-VITAMIN-K-1-MG-201042", "notes": "", "isInsulin": false}, {"id": "med-1784233275225-xnk81", "patientId": "patient-1784232786877-est66", "medType": "Scheduled", "name": "Erythromycin ophthalmic ointment", "dose": "0.5 ml ribbon x 1 both conjunctivae", "route": "Other", "frequency": "now", "scheduledTime": "1300", "indication": "", "provider": "Craig", "status": "Due", "initialStatus": "Due", "allergyKeywords": [], "highAlert": false, "barcode": "MED-ERYTHROMYCIN-OPHTHALMIC-OINTMENT-0-5-ML-RIBBON-X-1-BOTH-CONJUNCTIVAE-201042", "notes": "Erythromycin ophthalmic ointment 0.5 ml ribbon x 1 both conjunctivae", "isInsulin": false}, {"id": "med-1784233344406-md3c3", "patientId": "patient-1784232786877-est66", "medType": "Scheduled", "name": "Hepatitis B vaccine", "dose": "0.5 ml", "route": "IM", "frequency": "now", "scheduledTime": "1300", "indication": "", "provider": "Criag", "status": "Due", "initialStatus": "Due", "allergyKeywords": [], "highAlert": false, "barcode": "MED-HEPATITIS-B-VACCINE-0-5-ML-201042", "notes": "Hepatitis B vaccine 0.5 ml IM anterior thigh x 1 if > 2000 gm with consent", "isInsulin": false}, {"id": "med-1784233401776-1ly23", "patientId": "patient-1784232786877-est66", "medType": "Scheduled", "name": "Glucose gel", "dose": "per policy", "route": "PO", "frequency": "as need per policy", "scheduledTime": "as need for low blood sugar", "indication": "", "provider": "Criag", "status": "Due", "initialStatus": "Due", "allergyKeywords": [], "highAlert": false, "barcode": "MED-GLUCOSE-GEL-PER-POLICY-201042", "notes": "See policy in patient chart", "isInsulin": false}];
+const STORAGE_KEY="atuSimulationHospitalV8FullData";
+const DATASET_VERSION="8.0-full-export";
+let state=loadState();
+let currentView="patients";
+let verifiedPatient=null;
+let verifiedMedication=null;
+
+state.patients.forEach(p=>{if(typeof p.active!=="boolean")p.active=true});
+state.patients.forEach(p=>{
+ if(!p.barcode)p.barcode=`PT-${slugBarcode(p.mrn||p.name)}`;
+});
+state.medications.forEach(m=>{
+ if(!m.initialStatus)m.initialStatus=m.status||"Due";
+ if(!m.medType)m.medType="Scheduled";
+ if(!m.barcode){
+   const p=state.patients.find(x=>x.id===m.patientId);
+   m.barcode=`MED-${slugBarcode(m.name)}-${slugBarcode(m.dose)}-${slugBarcode(p?.mrn||m.patientId)}`;
+ }
+});
+state.bloodUnits ||= [];
+state.bloodAdministrations ||= [];
+state.glucoseChecks ||= [];
+state.bloodUnits.forEach(b=>{
+ if(!b.initialStatus)b.initialStatus=b.status||"Available";
+ if(!b.barcode)b.barcode=`BLOOD-${slugBarcode(b.product)}-${slugBarcode(b.unitType)}-${slugBarcode(b.unitNumber)}`;
+});
+save();
+
+function loadState(){
+ try{
+  const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||"null");
+  if(saved){
+    saved.patients ||= [];
+    saved.medications ||= [];
+    saved.administrations ||= [];
+    saved.bloodUnits ||= [];
+    saved.bloodAdministrations ||= [];
+    saved.glucoseChecks ||= [];
+    saved.settings ||= {bridgeUrl:"",notionEnabled:false};
+    if(saved.datasetVersion!==DATASET_VERSION || saved.patients.length<SEED_PATIENTS.length || saved.medications.length<SEED_MEDS.length){
+      const patientMap=new Map(SEED_PATIENTS.map(p=>[p.id,{...p}]));
+      saved.patients.forEach(p=>patientMap.set(p.id,{...patientMap.get(p.id),...p}));
+      saved.patients=[...patientMap.values()];
+      const medMap=new Map(SEED_MEDS.map(m=>[m.id,{...m}]));
+      saved.medications.forEach(m=>medMap.set(m.id,{...medMap.get(m.id),...m}));
+      saved.medications=[...medMap.values()];
+      const seededBlood=[{"id": "blood-1784233493383-qriwd", "patientId": "amelia-sung", "product": "Packed Red Blood Cells", "unitType": "O+", "unitNumber": "87594", "expiration": "2026-10-30T15:24", "status": "Available", "initialStatus": "Available", "barcode": "BLOOD-PACKED-RED-BLOOD-CELLS-O-87594", "notes": ""}, {"id": "blood-1784233588867-nchi3", "patientId": "jane-fowler", "product": "Packed Red Blood Cells", "unitType": "A+", "unitNumber": "897465", "expiration": "2026-10-30T15:26", "status": "Available", "initialStatus": "Available", "barcode": "BLOOD-PACKED-RED-BLOOD-CELLS-A-897465", "notes": ""}, {"id": "blood-1784233657815-2qys2", "patientId": "patient-1784228779067-hszw6", "product": "Packed Red Blood Cells", "unitType": "O+", "unitNumber": "8641394", "expiration": "2026-10-30T15:27", "status": "Available", "initialStatus": "Available", "barcode": "BLOOD-PACKED-RED-BLOOD-CELLS-O-8641394", "notes": ""}, {"id": "blood-1784233717284-481ss", "patientId": "patient-1784228908856-n5jsk", "product": "Packed Red Blood Cells", "unitType": "A-", "unitNumber": "7298423", "expiration": "2026-10-30T15:28", "status": "Available", "initialStatus": "Available", "barcode": "BLOOD-PACKED-RED-BLOOD-CELLS-A-7298423", "notes": ""}];
+      const bloodMap=new Map(seededBlood.map(b=>[b.id,{...b}]));
+      saved.bloodUnits.forEach(b=>bloodMap.set(b.id,{...bloodMap.get(b.id),...b}));
+      saved.bloodUnits=[...bloodMap.values()];
+      saved.datasetVersion=DATASET_VERSION;
+      localStorage.setItem(STORAGE_KEY,JSON.stringify(saved));
+    }
+    saved.patients.forEach(p=>{if(typeof p.active!=="boolean")p.active=true});
+    saved.medications.forEach(m=>{
+      if(!m.initialStatus)m.initialStatus=m.status||"Due";
+      if(!m.medType)m.medType="Scheduled";
+    });
+    return saved;
+  }
+  return {
+    datasetVersion:DATASET_VERSION,
+    patients:SEED_PATIENTS,
+    medications:SEED_MEDS,
+    administrations:[],
+    bloodUnits:[{"id": "blood-1784233493383-qriwd", "patientId": "amelia-sung", "product": "Packed Red Blood Cells", "unitType": "O+", "unitNumber": "87594", "expiration": "2026-10-30T15:24", "status": "Available", "initialStatus": "Available", "barcode": "BLOOD-PACKED-RED-BLOOD-CELLS-O-87594", "notes": ""}, {"id": "blood-1784233588867-nchi3", "patientId": "jane-fowler", "product": "Packed Red Blood Cells", "unitType": "A+", "unitNumber": "897465", "expiration": "2026-10-30T15:26", "status": "Available", "initialStatus": "Available", "barcode": "BLOOD-PACKED-RED-BLOOD-CELLS-A-897465", "notes": ""}, {"id": "blood-1784233657815-2qys2", "patientId": "patient-1784228779067-hszw6", "product": "Packed Red Blood Cells", "unitType": "O+", "unitNumber": "8641394", "expiration": "2026-10-30T15:27", "status": "Available", "initialStatus": "Available", "barcode": "BLOOD-PACKED-RED-BLOOD-CELLS-O-8641394", "notes": ""}, {"id": "blood-1784233717284-481ss", "patientId": "patient-1784228908856-n5jsk", "product": "Packed Red Blood Cells", "unitType": "A-", "unitNumber": "7298423", "expiration": "2026-10-30T15:28", "status": "Available", "initialStatus": "Available", "barcode": "BLOOD-PACKED-RED-BLOOD-CELLS-A-7298423", "notes": ""}],
+    bloodAdministrations:[],
+    glucoseChecks:[],
+    settings:{bridgeUrl:"",notionEnabled:false}
+  };
+ }catch(e){
+  return {
+    datasetVersion:DATASET_VERSION,
+    patients:SEED_PATIENTS,
+    medications:SEED_MEDS,
+    administrations:[],
+    bloodUnits:[{"id": "blood-1784233493383-qriwd", "patientId": "amelia-sung", "product": "Packed Red Blood Cells", "unitType": "O+", "unitNumber": "87594", "expiration": "2026-10-30T15:24", "status": "Available", "initialStatus": "Available", "barcode": "BLOOD-PACKED-RED-BLOOD-CELLS-O-87594", "notes": ""}, {"id": "blood-1784233588867-nchi3", "patientId": "jane-fowler", "product": "Packed Red Blood Cells", "unitType": "A+", "unitNumber": "897465", "expiration": "2026-10-30T15:26", "status": "Available", "initialStatus": "Available", "barcode": "BLOOD-PACKED-RED-BLOOD-CELLS-A-897465", "notes": ""}, {"id": "blood-1784233657815-2qys2", "patientId": "patient-1784228779067-hszw6", "product": "Packed Red Blood Cells", "unitType": "O+", "unitNumber": "8641394", "expiration": "2026-10-30T15:27", "status": "Available", "initialStatus": "Available", "barcode": "BLOOD-PACKED-RED-BLOOD-CELLS-O-8641394", "notes": ""}, {"id": "blood-1784233717284-481ss", "patientId": "patient-1784228908856-n5jsk", "product": "Packed Red Blood Cells", "unitType": "A-", "unitNumber": "7298423", "expiration": "2026-10-30T15:28", "status": "Available", "initialStatus": "Available", "barcode": "BLOOD-PACKED-RED-BLOOD-CELLS-A-7298423", "notes": ""}],
+    bloodAdministrations:[],
+    glucoseChecks:[],
+    settings:{bridgeUrl:"",notionEnabled:false}
+  };
+ }
+}
+function save(){
+ try{
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+  updateSaveStatus(true,"Saved in this browser");
+  return true;
+ }catch(e){
+  updateSaveStatus(false,"Storage failed");
+  alert("The browser could not save the chart data. Download a backup now and avoid private/incognito mode.");
+  return false;
+ }
+}
+function updateSaveStatus(ok,text){
+ const b=document.getElementById("saveStatusBadge");
+ if(!b)return;
+ b.textContent=text;
+ b.className=`badge ${ok?"saved":"error"}`;
+}
+function verifyStoredData(){
+ try{
+  const raw=localStorage.getItem(STORAGE_KEY);
+  if(!raw){updateSaveStatus(true,"Ready to save");return}
+  const parsed=JSON.parse(raw);
+  const patients=parsed.patients?.length||0;
+  const meds=parsed.medications?.length||0;
+  updateSaveStatus(true,`${patients} patients • ${meds} meds saved`);
+ }catch(e){updateSaveStatus(false,"Saved data unreadable")}
+}
+function downloadDataBackup(){
+ const backup={
+  application:"ATU Simulation Hospital Medication & Blood Module",
+  version:"v6",
+  exportedAt:new Date().toISOString(),
+  data:state
+ };
+ const blob=new Blob([JSON.stringify(backup,null,2)],{type:"application/json"});
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement("a");
+ a.href=url;
+ a.download=`ATU_Simulation_Backup_${new Date().toISOString().slice(0,10)}.json`;
+ document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+}
+function restoreDataBackup(file){
+ const reader=new FileReader();
+ reader.onload=()=>{
+  try{
+   const parsed=JSON.parse(reader.result);
+   const incoming=parsed.data||parsed;
+   if(!Array.isArray(incoming.patients)||!Array.isArray(incoming.medications)){
+    throw new Error("This file is not a valid ATU Simulation backup.");
+   }
+   if(!confirm(`Restore ${incoming.patients.length} patient(s) and ${incoming.medications.length} medication order(s)?\n\nThis will replace the data currently stored in this browser.`))return;
+   state=incoming;
+   state.bloodUnits ||= [];
+   state.bloodAdministrations ||= [];
+   state.administrations ||= [];
+   state.settings ||= {bridgeUrl:"",notionEnabled:false};
+   save();
+   verifiedPatient=null;verifiedMedication=null;verifiedBloodPatient=null;verifiedBloodUnit=null;
+   currentView="patients";
+   alert("Backup restored successfully.");
+   render();
+  }catch(e){alert(e.message||"The backup file could not be restored.")}
+ };
+ reader.readAsText(file);
+}
+function esc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+function nowLocal(){const d=new Date(),off=d.getTimezoneOffset();return new Date(d.getTime()-off*60000).toISOString().slice(0,16)}
+function activePatient(){return verifiedPatient?state.patients.find(p=>p.id===verifiedPatient):null}
+function patientMeds(id){return state.medications.filter(m=>m.patientId===id)}
+function render(){
+ document.querySelectorAll("aside button").forEach(b=>b.classList.toggle("active",b.dataset.view===currentView));
+ renderPatientBanner();
+ if(currentView==="patients")renderActivePatients();
+ if(currentView==="builder")renderBuilder();
+ if(currentView==="admin")renderAdmin();
+ if(currentView==="mar")renderMar();
+ if(currentView==="glucose")renderGlucoseModule();
+ if(currentView==="blood")renderBloodAdministration();
+ if(currentView==="bloodBuilder")renderBloodBuilder();
+ if(currentView==="barcodes")renderBarcodes();
+ if(currentView==="history")renderHistory();
+ if(currentView==="settings")renderSettings();
+}
+function renderPatientBanner(){
+ const p=activePatient(),box=document.getElementById("patientBanner");
+ if(!p){box.classList.add("hidden");return}
+ box.classList.remove("hidden");
+ box.innerHTML=`<h2>${esc(p.name)}</h2><div class="patientMeta">
+ <div><span>MRN</span>${esc(p.mrn)}</div><div><span>DOB</span>${esc(p.dob)}</div><div><span>Room</span>${esc(p.room)}</div>
+ <div><span>Provider</span>${esc(p.provider)}</div><div><span>Allergies</span><b class="${p.allergies.length?'allergy':''}">${p.allergies.length?esc(p.allergies.join(", ")):"NKDA"}</b></div></div>`;
+}
+function panel(title,body){return `<section class="panel"><h2>${title}</h2><div class="body">${body}</div></section>`}
+
+
+function renderActivePatients(){
+ const active=state.patients.filter(p=>p.active!==false);
+ const inactive=state.patients.filter(p=>p.active===false);
+ document.getElementById("view").innerHTML=
+ panel("Active Patients",`
+ <div class="actions" style="margin-bottom:10px">
+  <button id="addPatientShortcut" class="primary">Add New Patient</button>
+  <button id="reloadFullDatasetBtn" class="secondary">Reload Full Patient & MAR Dataset</button>
+  <button id="backupDataBtn" class="secondary">Download Data Backup</button>
+  <button id="restoreDataBtn" class="secondary">Restore Data Backup</button>
+  <input id="restoreDataFile" type="file" accept=".json,application/json" class="hidden">
+  <button id="resetAllActiveBtn" class="secondary">Reset All Active Simulations</button>
+ </div>
+ <div class="patientCards">
+ ${active.map(patientCardHtml).join("")||'<div class="safety">No active patients. Add a patient in Faculty Builder.</div>'}
+ </div>`) +
+ (inactive.length?panel("Inactive Patients",`<div class="patientCards">${inactive.map(patientCardHtml).join("")}</div>`):"");
+ document.getElementById("addPatientShortcut").onclick=()=>{currentView="builder";builderTab="patients";editingPatientId=null;render()};
+ document.getElementById("reloadFullDatasetBtn").onclick=()=>{
+   if(!confirm("Reload the full exported patient, medication, and blood-product dataset?\\n\\nThis keeps administration history but restores any missing patients, medications, and blood products."))return;
+   const patientMap=new Map(SEED_PATIENTS.map(p=>[p.id,{...p}]));
+   state.patients.forEach(p=>patientMap.set(p.id,{...patientMap.get(p.id),...p}));
+   state.patients=[...patientMap.values()];
+   const medMap=new Map(SEED_MEDS.map(m=>[m.id,{...m}]));
+   state.medications.forEach(m=>medMap.set(m.id,{...medMap.get(m.id),...m}));
+   state.medications=[...medMap.values()];
+   const seededBlood=[{"id": "blood-1784233493383-qriwd", "patientId": "amelia-sung", "product": "Packed Red Blood Cells", "unitType": "O+", "unitNumber": "87594", "expiration": "2026-10-30T15:24", "status": "Available", "initialStatus": "Available", "barcode": "BLOOD-PACKED-RED-BLOOD-CELLS-O-87594", "notes": ""}, {"id": "blood-1784233588867-nchi3", "patientId": "jane-fowler", "product": "Packed Red Blood Cells", "unitType": "A+", "unitNumber": "897465", "expiration": "2026-10-30T15:26", "status": "Available", "initialStatus": "Available", "barcode": "BLOOD-PACKED-RED-BLOOD-CELLS-A-897465", "notes": ""}, {"id": "blood-1784233657815-2qys2", "patientId": "patient-1784228779067-hszw6", "product": "Packed Red Blood Cells", "unitType": "O+", "unitNumber": "8641394", "expiration": "2026-10-30T15:27", "status": "Available", "initialStatus": "Available", "barcode": "BLOOD-PACKED-RED-BLOOD-CELLS-O-8641394", "notes": ""}, {"id": "blood-1784233717284-481ss", "patientId": "patient-1784228908856-n5jsk", "product": "Packed Red Blood Cells", "unitType": "A-", "unitNumber": "7298423", "expiration": "2026-10-30T15:28", "status": "Available", "initialStatus": "Available", "barcode": "BLOOD-PACKED-RED-BLOOD-CELLS-A-7298423", "notes": ""}];
+   const bloodMap=new Map(seededBlood.map(b=>[b.id,{...b}]));
+   state.bloodUnits.forEach(b=>bloodMap.set(b.id,{...bloodMap.get(b.id),...b}));
+   state.bloodUnits=[...bloodMap.values()];
+   state.datasetVersion=DATASET_VERSION;
+   save();
+   alert(`Full dataset restored: ${state.patients.length} patients, ${state.medications.length} medications, and ${state.bloodUnits.length} blood products.`);
+   renderActivePatients();
+ };
+ document.getElementById("backupDataBtn").onclick=downloadDataBackup;
+ document.getElementById("restoreDataBtn").onclick=()=>document.getElementById("restoreDataFile").click();
+ document.getElementById("restoreDataFile").onchange=e=>{if(e.target.files?.[0])restoreDataBackup(e.target.files[0])};
+ document.getElementById("resetAllActiveBtn").onclick=resetAllActiveSimulations;
+ document.querySelectorAll(".openPatient").forEach(b=>b.onclick=()=>openPatientForAdministration(b.dataset.id));
+ document.querySelectorAll(".resetPatient").forEach(b=>b.onclick=()=>resetPatientSimulation(b.dataset.id));
+ document.querySelectorAll(".togglePatientActive").forEach(b=>b.onclick=()=>togglePatientActive(b.dataset.id));
+}
+function patientCardHtml(p){
+ const meds=patientMeds(p.id);
+ const due=meds.filter(m=>m.status==="Due").length;
+ const given=meds.filter(m=>m.status==="Given").length;
+ const administrations=state.administrations.filter(a=>a.patientId===p.id).length;
+ return `<article class="patientCard ${p.active===false?"inactive":""}">
+  <h3>${esc(p.name)}</h3>
+  <div class="patientCardMeta">
+   <div><span>MRN</span>${esc(p.mrn)}</div><div><span>Room</span>${esc(p.room)}</div>
+   <div><span>Provider</span>${esc(p.provider)}</div><div><span>Allergies</span><b class="${p.allergies.length?"allergy":""}">${p.allergies.length?esc(p.allergies.join(", ")):"NKDA"}</b></div>
+   <div><span>MAR</span>${meds.length} medication(s)</div><div><span>Status</span>${due} due • ${given} given</div>
+   <div><span>Administrations</span>${administrations}</div><div><span>Glucose Checks</span>${state.glucoseChecks.filter(g=>g.patientId===p.id).length}</div><div><span>Patient Status</span>${p.active===false?"Inactive":"Active"}</div>
+  </div>
+  <div class="actions">
+   <button class="primary openPatient" data-id="${esc(p.id)}" ${p.active===false?"disabled":""}>Open Medication Administration</button>
+   <button class="secondary resetPatient" data-id="${esc(p.id)}">Reset Simulation</button>
+   <button class="secondary togglePatientActive" data-id="${esc(p.id)}">${p.active===false?"Make Active":"Make Inactive"}</button>
+  </div>
+ </article>`;
+}
+function openPatientForAdministration(id){
+ const p=state.patients.find(x=>x.id===id);
+ if(!p||p.active===false)return;
+ verifiedPatient=id;
+ verifiedMedication=null;
+ currentView="admin";
+ render();
+ setTimeout(()=>document.getElementById("medScan")?.focus(),50);
+}
+function resetPatientSimulation(id){
+ const p=state.patients.find(x=>x.id===id);
+ if(!p)return;
+ const medCount=state.medications.filter(m=>m.patientId===id).length;
+ const adminCount=state.administrations.filter(a=>a.patientId===id).length;
+ if(!confirm(`Reset ${p.name}'s simulation?\n\nThis will:\n• Return ${medCount} medication order(s) to their starting MAR status\n• Delete ${adminCount} administration record(s) for this patient\n• Keep the patient, MAR, barcodes, and medication orders for reuse`))return;
+ state.medications.filter(m=>m.patientId===id).forEach(m=>{
+   m.status=m.initialStatus||"Due";
+ });
+ state.administrations=state.administrations.filter(a=>a.patientId!==id);
+ state.bloodUnits.filter(b=>b.patientId===id).forEach(b=>b.status=b.initialStatus||"Available");
+ state.bloodAdministrations=state.bloodAdministrations.filter(a=>a.patientId!==id);
+ state.glucoseChecks=state.glucoseChecks.filter(g=>g.patientId!==id);
+ if(verifiedPatient===id){verifiedMedication=null}
+ save();
+ alert(`${p.name}'s simulation has been reset. The same MAR is ready for the next student.`);
+ render();
+}
+function resetAllActiveSimulations(){
+ const active=state.patients.filter(p=>p.active!==false);
+ if(!active.length)return alert("There are no active patients to reset.");
+ if(!confirm(`Reset all ${active.length} active patient simulations?\n\nPatients and medication orders will be kept. Administration records will be cleared and MAR statuses restored.`))return;
+ const ids=new Set(active.map(p=>p.id));
+ state.medications.forEach(m=>{if(ids.has(m.patientId))m.status=m.initialStatus||"Due"});
+ state.administrations=state.administrations.filter(a=>!ids.has(a.patientId));
+ state.bloodUnits.forEach(b=>{if(ids.has(b.patientId))b.status=b.initialStatus||"Available"});
+ state.bloodAdministrations=state.bloodAdministrations.filter(a=>!ids.has(a.patientId));
+ state.glucoseChecks=state.glucoseChecks.filter(g=>!ids.has(g.patientId));
+ verifiedMedication=null;
+ save();
+ alert("All active simulations have been reset.");
+ render();
+}
+function togglePatientActive(id){
+ const p=state.patients.find(x=>x.id===id);
+ if(!p)return;
+ p.active=p.active===false;
+ if(p.active===false&&verifiedPatient===id){verifiedPatient=null;verifiedMedication=null}
+ save();renderActivePatients();
+}
+
+let builderTab="patients";
+let editingPatientId=null;
+let editingMedicationId=null;
+
+function uid(prefix){
+ return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2,7)}`;
+}
+function slugBarcode(value){
+ return String(value||"ITEM").toUpperCase().trim().replace(/[^A-Z0-9]+/g,"-").replace(/^-+|-+$/g,"");
+}
+function parseKeywords(value){
+ return String(value||"").split(",").map(x=>x.trim().toLowerCase()).filter(Boolean);
+}
+function patientOptions(selected=""){
+ return state.patients.map(p=>`<option value="${esc(p.id)}" ${p.id===selected?"selected":""}>${esc(p.name)} — ${esc(p.mrn)}</option>`).join("");
+}
+function renderBuilder(){
+ const view=document.getElementById("view");
+ view.innerHTML=`
+ <div class="builderTabs">
+  <button id="patientTabBtn" class="${builderTab==="patients"?"active":""}">Patients</button>
+  <button id="medTabBtn" class="${builderTab==="medications"?"active":""}">Medication Orders</button>
+ </div>
+ <div id="builderContent"></div>`;
+ document.getElementById("patientTabBtn").onclick=()=>{builderTab="patients";editingPatientId=null;renderBuilder()};
+ document.getElementById("medTabBtn").onclick=()=>{builderTab="medications";editingMedicationId=null;renderBuilder()};
+ if(builderTab==="patients")renderPatientBuilder();
+ else renderMedicationBuilder();
+}
+function renderPatientBuilder(){
+ const p=editingPatientId?state.patients.find(x=>x.id===editingPatientId):null;
+ document.getElementById("builderContent").innerHTML=
+ panel(p?"Edit Patient":"Add Patient",`
+ <div class="grid">
+  <label>Patient Name<input id="pbName" value="${esc(p?.name||"")}"></label>
+  <label>MRN<input id="pbMrn" value="${esc(p?.mrn||"")}"></label>
+  <label>Date of Birth<input id="pbDob" value="${esc(p?.dob||"")}"></label>
+  <label>Room Number<input id="pbRoom" value="${esc(p?.room||"")}"></label>
+  <label>Provider<input id="pbProvider" value="${esc(p?.provider||"")}"></label>
+<label>Blood Type<select id="pbBloodType">${["","O-","O+","A-","A+","B-","B+","AB-","AB+"].map(x=>`<option value="${x}" ${p?.bloodType===x?"selected":""}>${x||"Not entered"}</option>`).join("")}</select></label>
+  <label>Weight (kg)<input id="pbWeight" type="number" step="0.1" value="${esc(p?.weightKg||"")}"></label>
+  <label class="wide">Allergies — separate with commas<input id="pbAllergies" value="${esc((p?.allergies||[]).join(", "))}" placeholder="penicillin, shellfish"></label>
+  <label>Patient Barcode<input id="pbBarcode" value="${esc(p?.barcode||"")}" placeholder="Generated automatically if blank"></label>
+  <label>Patient Status<select id="pbActive"><option value="true" ${p?.active===false?"":"selected"}>Active</option><option value="false" ${p?.active===false?"selected":""}>Inactive</option></select></label>
+ </div>
+ <div class="actions" style="margin-top:10px">
+  <button id="savePatientBtn" class="primary">${p?"Save Patient Changes":"Add Patient"}</button>
+  ${p?'<button id="cancelPatientEditBtn" class="secondary">Cancel Edit</button>':""}
+ </div>
+ <div id="patientBuilderFeedback"></div>`) +
+ panel("Current Patients",`
+ <table><thead><tr><th>Name</th><th>MRN</th><th>DOB</th><th>Room</th><th>Provider</th><th>Allergies</th><th>Status</th><th>Barcode</th><th>Actions</th></tr></thead>
+ <tbody>${state.patients.map(x=>`<tr class="${x.id===editingPatientId?"editRow":""}">
+ <td><b>${esc(x.name)}</b></td><td>${esc(x.mrn)}</td><td>${esc(x.dob)}</td><td>${esc(x.room)}</td><td>${esc(x.provider)}</td>
+ <td class="${x.allergies.length?"allergy":""}">${x.allergies.length?esc(x.allergies.join(", ")):"NKDA"}</td><td>${x.active===false?"Inactive":"Active"}</td><td>${esc(x.barcode)}</td>
+ <td><div class="actions"><button class="secondary smallBtn editPatient" data-id="${esc(x.id)}">Edit</button><button class="dangerBtn smallBtn deletePatient" data-id="${esc(x.id)}">Delete</button></div></td>
+ </tr>`).join("")||'<tr><td colspan="9">No patients entered.</td></tr>'}</tbody></table>`);
+ document.getElementById("savePatientBtn").onclick=savePatientFromBuilder;
+ document.getElementById("cancelPatientEditBtn")?.addEventListener("click",()=>{editingPatientId=null;renderPatientBuilder()});
+ document.querySelectorAll(".editPatient").forEach(b=>b.onclick=()=>{editingPatientId=b.dataset.id;renderPatientBuilder()});
+ document.querySelectorAll(".deletePatient").forEach(b=>b.onclick=()=>deletePatient(b.dataset.id));
+}
+function savePatientFromBuilder(){
+ const name=document.getElementById("pbName").value.trim();
+ const mrn=document.getElementById("pbMrn").value.trim();
+ const dob=document.getElementById("pbDob").value.trim();
+ const room=document.getElementById("pbRoom").value.trim();
+ const provider=document.getElementById("pbProvider").value.trim();
+ const bloodType=document.getElementById("pbBloodType").value;
+ const weightKg=Number(document.getElementById("pbWeight").value||0);
+ const allergies=parseKeywords(document.getElementById("pbAllergies").value);
+ const active=document.getElementById("pbActive").value==="true";
+ let barcode=document.getElementById("pbBarcode").value.trim();
+
+ const missing=[];
+ if(!name)missing.push("Patient name");
+ if(!mrn)missing.push("MRN");
+ if(!dob)missing.push("Date of birth");
+ if(!room)missing.push("Room number");
+ if(!provider)missing.push("Provider");
+ if(missing.length){
+  alert(`Enter the following before saving:\n\n• ${missing.join("\n• ")}`);
+  return;
+ }
+ const duplicate=state.patients.find(x=>x.mrn.toLowerCase()===mrn.toLowerCase()&&x.id!==editingPatientId);
+ if(duplicate)return alert("That MRN is already assigned to another patient.");
+ if(!barcode)barcode=`PT-${slugBarcode(mrn)}`;
+
+ if(editingPatientId){
+  const p=state.patients.find(x=>x.id===editingPatientId);
+  Object.assign(p,{name,mrn,dob,room,provider,bloodType,weightKg,allergies,barcode,active});
+ }else{
+  state.patients.push({id:uid("patient"),name,mrn,dob,room,provider,bloodType,weightKg,allergies,barcode,active});
+ }
+ save();editingPatientId=null;renderPatientBuilder();
+}
+function deletePatient(id){
+ const p=state.patients.find(x=>x.id===id);
+ const meds=state.medications.filter(m=>m.patientId===id).length;
+ if(!confirm(`Delete ${p?.name||"this patient"}?\n\nThis will also delete ${meds} medication order(s) assigned to the patient.`))return;
+ state.patients=state.patients.filter(x=>x.id!==id);
+ state.medications=state.medications.filter(x=>x.patientId!==id);
+ if(verifiedPatient===id){verifiedPatient=null;verifiedMedication=null}
+ save();renderPatientBuilder();
+}
+function renderMedicationBuilder(){
+ if(!state.patients.length){
+  document.getElementById("builderContent").innerHTML=panel("Medication Orders",'<div class="safety">Add a patient before entering medication orders.</div>');
+  return;
+ }
+ const m=editingMedicationId?state.medications.find(x=>x.id===editingMedicationId):null;
+ document.getElementById("builderContent").innerHTML=
+ panel(m?"Edit Medication Order":"Add Medication Order",`
+ <div class="grid">
+  <label>Patient<select id="mbPatient">${patientOptions(m?.patientId||state.patients[0].id)}</select></label>
+  <label>Medication Type<select id="mbType"><option ${m?.medType==="PRN"?"":"selected"}>Scheduled</option><option ${m?.medType==="PRN"?"selected":""}>PRN</option></select></label>
+  <label>Medication Name<input id="mbName" value="${esc(m?.name||"")}"></label>
+  <label>Dose<input id="mbDose" value="${esc(m?.dose||"")}"></label>
+  <label>Route<select id="mbRoute">${["PO","IV","IVPB","IV infusion","IM","Subcutaneous","Rectal","Topical","Inhaled","Other"].map(x=>`<option ${m?.route===x?"selected":""}>${x}</option>`).join("")}</select></label>
+  <label>Frequency<input id="mbFrequency" value="${esc(m?.frequency||"")}" placeholder="Every 6 hours, continuous..."></label>
+  <label>Scheduled Time<input id="mbTime" value="${esc(m?.scheduledTime||"")}" placeholder="0800, on call to OR..."></label>
+  <label>PRN Indication<input id="mbIndication" value="${esc(m?.indication||"")}" placeholder="Pain, nausea, fever..."></label>
+  <label>Provider<input id="mbProvider" value="${esc(m?.provider||"")}"></label>
+  <label>Status<select id="mbStatus">${["Due","Held","Discontinued","Completed"].map(x=>`<option ${m?.status===x?"selected":""}>${x}</option>`).join("")}</select></label>
+  <label class="wide">Allergy / Cross-Reactivity Keywords<input id="mbAllergyKeywords" value="${esc((m?.allergyKeywords||[]).join(", "))}" placeholder="penicillin, cephalosporin, sulfa"></label>
+  <label>High-Alert Medication<select id="mbHighAlert"><option value="false" ${m?.highAlert?"":"selected"}>No</option><option value="true" ${m?.highAlert?"selected":""}>Yes</option></select></label>
+  <label>Medication Barcode<input id="mbBarcode" value="${esc(m?.barcode||"")}" placeholder="Generated automatically if blank"></label>
+  <label class="wide">Administration Parameters / Notes<textarea id="mbNotes">${esc(m?.notes||"")}</textarea></label>
+ </div>
+ <div class="actions" style="margin-top:10px">
+  <button id="saveMedicationBtn" class="primary">${m?"Save Medication Changes":"Add Medication to MAR"}</button>
+  ${m?'<button id="cancelMedicationEditBtn" class="secondary">Cancel Edit</button>':""}
+ </div>`) +
+ panel("Current Medication Orders",`
+ <table><thead><tr><th>Patient</th><th>Type</th><th>Medication</th><th>Dose</th><th>Route</th><th>Frequency / Time</th><th>Status</th><th>High Alert</th><th>Barcode</th><th>Actions</th></tr></thead>
+ <tbody>${state.medications.map(x=>{const p=state.patients.find(p=>p.id===x.patientId);return `<tr class="${x.id===editingMedicationId?"editRow":""}">
+ <td>${esc(p?.name||"Unknown patient")}</td><td>${esc(x.medType||"Scheduled")}</td><td><b>${esc(x.name)}</b></td><td>${esc(x.dose)}</td><td>${esc(x.route)}</td>
+ <td>${esc(x.frequency)}<br><small>${esc(x.scheduledTime)}</small></td><td>${esc(x.status)}</td><td>${x.highAlert?'<b class="allergy">YES</b>':'No'}</td><td>${esc(x.barcode)}</td>
+ <td><div class="actions"><button class="secondary smallBtn editMedication" data-id="${esc(x.id)}">Edit</button><button class="secondary smallBtn duplicateMedication" data-id="${esc(x.id)}">Duplicate</button><button class="dangerBtn smallBtn deleteMedication" data-id="${esc(x.id)}">Delete</button></div></td>
+ </tr>`}).join("")||'<tr><td colspan="10">No medications entered.</td></tr>'}</tbody></table>`);
+ document.getElementById("saveMedicationBtn").onclick=saveMedicationFromBuilder;
+ document.getElementById("cancelMedicationEditBtn")?.addEventListener("click",()=>{editingMedicationId=null;renderMedicationBuilder()});
+ document.querySelectorAll(".editMedication").forEach(b=>b.onclick=()=>{editingMedicationId=b.dataset.id;renderMedicationBuilder()});
+ document.querySelectorAll(".duplicateMedication").forEach(b=>b.onclick=()=>duplicateMedication(b.dataset.id));
+ document.querySelectorAll(".deleteMedication").forEach(b=>b.onclick=()=>deleteMedication(b.dataset.id));
+}
+function saveMedicationFromBuilder(){
+ const patientId=document.getElementById("mbPatient").value;
+ const medType=document.getElementById("mbType").value;
+ const name=document.getElementById("mbName").value.trim();
+ const dose=document.getElementById("mbDose").value.trim();
+ const route=document.getElementById("mbRoute").value;
+ const frequency=document.getElementById("mbFrequency").value.trim();
+ const scheduledTime=document.getElementById("mbTime").value.trim();
+ const indication=document.getElementById("mbIndication").value.trim();
+ const provider=document.getElementById("mbProvider").value.trim();
+ const status=document.getElementById("mbStatus").value;
+ const allergyKeywords=parseKeywords(document.getElementById("mbAllergyKeywords").value);
+ const highAlert=document.getElementById("mbHighAlert").value==="true";
+ let barcode=document.getElementById("mbBarcode").value.trim();
+ const notes=document.getElementById("mbNotes").value.trim();
+
+ const missing=[];
+ if(!patientId)missing.push("Patient");
+ if(!name)missing.push("Medication name");
+ if(!dose)missing.push("Dose");
+ if(!route)missing.push("Route");
+ if(!frequency)missing.push("Frequency");
+ if(!scheduledTime)missing.push("Scheduled time");
+ if(!provider)missing.push("Provider");
+ if(medType==="PRN"&&!indication)missing.push("PRN indication");
+ if(missing.length){
+  alert(`Enter the following before saving:\n\n• ${missing.join("\n• ")}`);
+  return;
+ }
+ if(!barcode){
+  const p=state.patients.find(x=>x.id===patientId);
+  barcode=`MED-${slugBarcode(name)}-${slugBarcode(dose)}-${slugBarcode(p?.mrn||patientId)}`;
+ }
+ const duplicate=state.medications.find(x=>x.barcode===barcode&&x.id!==editingMedicationId);
+ if(duplicate)return alert("That medication barcode is already in use.");
+
+ const record={patientId,medType,name,dose,route,frequency,scheduledTime,indication,provider,status,initialStatus:status,allergyKeywords,highAlert,barcode,notes};
+ if(editingMedicationId)Object.assign(state.medications.find(x=>x.id===editingMedicationId),record);
+ else state.medications.push({id:uid("med"),...record});
+ save();editingMedicationId=null;renderMedicationBuilder();
+}
+function duplicateMedication(id){
+ const source=state.medications.find(x=>x.id===id);
+ if(!source)return;
+ const copy={...source,id:uid("med"),name:`${source.name} Copy`,barcode:`${source.barcode}-COPY-${Date.now().toString().slice(-4)}`,status:"Due"};
+ state.medications.push(copy);save();editingMedicationId=copy.id;renderMedicationBuilder();
+}
+function deleteMedication(id){
+ const m=state.medications.find(x=>x.id===id);
+ if(!confirm(`Delete ${m?.name||"this medication order"} from the MAR?`))return;
+ state.medications=state.medications.filter(x=>x.id!==id);
+ if(verifiedMedication===id)verifiedMedication=null;
+ save();renderMedicationBuilder();
+}
+
+function renderAdmin(){
+ const p=activePatient(),med=verifiedMedication?state.medications.find(m=>m.id===verifiedMedication):null;
+ document.getElementById("view").innerHTML=`
+ <div class="modeBanner">Use a USB barcode scanner, phone scanner that types into a field, or type the demonstration barcode manually and press Enter.</div>
+ ${panel("Step 1 — Verify Patient",`<div id="patientStep" class="scanStep ${p?'complete':''}">
+ <h3>Scan patient wristband</h3><input id="patientScan" placeholder="Example: PT-SIM-204051" autocomplete="off">
+ <div id="patientFeedback" class="feedback ${p?'ok hidden':'hidden'}"></div></div>`)}
+ ${panel("Step 2 — Verify Medication",`<div id="medStep" class="scanStep ${med?'complete':''}">
+ <h3>Scan medication barcode</h3><input id="medScan" placeholder="Verify patient first" autocomplete="off" ${p?'':'disabled'}>
+ <div id="medFeedback" class="feedback hidden"></div></div>`)}
+ <div id="verificationArea">${p&&med?verificationHtml(p,med):""}</div>`;
+ const ps=document.getElementById("patientScan"),ms=document.getElementById("medScan");
+ ps.onkeydown=e=>{if(e.key==="Enter"){verifyPatient(ps.value.trim());ps.value=""}};
+ ms.onkeydown=e=>{if(e.key==="Enter"){verifyMedication(ms.value.trim());ms.value=""}};
+ setTimeout(()=>ps.focus(),50);
+}
+function verifyPatient(code){
+ const p=state.patients.find(p=>(p.barcode===code||p.mrn===code)&&p.active!==false);
+ const fb=document.getElementById("patientFeedback"),step=document.getElementById("patientStep");
+ if(!p){verifiedPatient=null;verifiedMedication=null;step.className="scanStep error";fb.className="feedback bad";fb.textContent="PATIENT MISMATCH: Wristband was not recognized. Stop and rescan.";renderPatientBanner();return}
+ verifiedPatient=p.id;verifiedMedication=null;step.className="scanStep complete";fb.className="feedback ok";fb.textContent=`Patient verified: ${p.name}, MRN ${p.mrn}.`;
+ render();
+ setTimeout(()=>document.getElementById("medScan")?.focus(),50);
+}
+function verifyMedication(code){
+ const p=activePatient(),fb=document.getElementById("medFeedback"),step=document.getElementById("medStep");
+ if(!p)return;
+ const med=state.medications.find(m=>m.barcode===code);
+ if(!med){verifiedMedication=null;step.className="scanStep error";fb.className="feedback bad";fb.textContent="MEDICATION NOT FOUND: Stop and verify the medication label.";return}
+ if(med.patientId!==p.id){verifiedMedication=null;step.className="scanStep error";fb.className="feedback bad";fb.textContent=`WRONG PATIENT / UNORDERED MEDICATION: ${med.name} is not on ${p.name}'s MAR.`;return}
+ verifiedMedication=med.id;step.className="scanStep complete";fb.className="feedback ok";fb.textContent=`Medication verified: ${med.name} ${med.dose} ${med.route}.`;
+ document.getElementById("verificationArea").innerHTML=verificationHtml(p,med);
+ bindVerification();
+}
+function allergyConflict(p,m){
+ const allergies=p.allergies.map(x=>x.toLowerCase());
+ return m.allergyKeywords.filter(k=>allergies.some(a=>k.toLowerCase().includes(a)||a.includes(k.toLowerCase())));
+}
+function verificationHtml(p,m){
+ const conflicts=allergyConflict(p,m);
+ return panel("Medication Safety Verification",`
+ ${conflicts.length?`<div class="safety">ALLERGY ALERT: ${esc(m.name)} matches documented allergy information: ${esc(conflicts.join(", "))}. Do not administer.</div>`:""}
+ ${m.highAlert?`<div class="safety">HIGH-ALERT MEDICATION: Independent double-check is required for this simulation.</div>`:""}
+ <div class="grid3">
+ <div><b>Medication</b><p>${esc(m.name)}</p></div><div><b>Dose</b><p>${esc(m.dose)}</p></div><div><b>Route</b><p>${esc(m.route)}</p></div>
+ <div><b>Scheduled</b><p>${esc(m.scheduledTime)}</p></div><div><b>Frequency</b><p>${esc(m.frequency)}</p></div><div><b>Indication</b><p>${esc(m.indication)}</p></div>
+ </div>
+ <h3>Required checks</h3>
+ <div class="checks">
+ ${["Right patient","Right medication","Right dose","Right route","Right time","Allergies reviewed","Order verified","Medication expiration and integrity checked"].map((x,i)=>`<label class="check"><input type="checkbox" class="fiveRight" id="check${i}"><span>${x}</span></label>`).join("")}
+ ${m.highAlert?`<label class="check"><input type="checkbox" id="doubleCheck"><span>Independent double-check completed</span></label>`:""}
+ </div>
+ <div class="grid" style="margin-top:10px">
+ <label>Student Nurse<input id="studentName"></label>
+ <label>Administration Date/Time<input id="adminTime" type="datetime-local" value="${nowLocal()}"></label>
+ <label>Site / Line<input id="adminSite" placeholder="Left forearm IV, right vastus lateralis..."></label>
+ <label>Response / Notes<input id="adminNotes"></label>
+ </div>
+ <div class="actions" style="margin-top:10px">
+ <button id="administerBtn" class="primary" ${conflicts.length?"disabled":""}>Document Medication Administration</button>
+ <button id="cancelBtn" class="secondary">Cancel Medication</button>
+ </div>
+ <div id="adminFeedback"></div>`);
+}
+function bindVerification(){
+ document.getElementById("cancelBtn").onclick=()=>{verifiedMedication=null;render()};
+ document.getElementById("administerBtn").onclick=administerMedication;
+}
+async function administerMedication(){
+ const p=activePatient(),m=state.medications.find(x=>x.id===verifiedMedication);
+ const checks=[...document.querySelectorAll(".fiveRight")];
+ if(checks.some(c=>!c.checked))return showAdminFeedback("Complete all required medication checks.",false);
+ if(m.highAlert&&!document.getElementById("doubleCheck").checked)return showAdminFeedback("Complete the independent double-check.",false);
+ const student=document.getElementById("studentName").value.trim();
+ if(!student)return showAdminFeedback("Enter the student nurse name.",false);
+ const record={id:"ADM-"+Date.now(),patientId:p.id,patientName:p.name,mrn:p.mrn,medicationId:m.id,medication:m.name,dose:m.dose,route:m.route,scheduledTime:m.scheduledTime,administeredAt:document.getElementById("adminTime").value,student,site:document.getElementById("adminSite").value.trim(),notes:document.getElementById("adminNotes").value.trim(),barcode:m.barcode};
+ state.administrations.push(record);m.status="Given";save();
+ if(state.settings.notionEnabled&&state.settings.bridgeUrl){
+  try{
+   const res=await fetch(state.settings.bridgeUrl,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"createMedicationAdministration",record})});
+   if(!res.ok)throw new Error(await res.text());
+   showAdminFeedback("Medication documented locally and written to Notion.",true);
+  }catch(err){showAdminFeedback("Medication documented locally, but the Notion write-back failed: "+err.message,false)}
+ }else showAdminFeedback("Medication administration documented in demonstration mode.",true);
+ verifiedMedication=null;setTimeout(render,1200);
+}
+function showAdminFeedback(text,ok){const b=document.getElementById("adminFeedback");b.className=ok?"success":"safety";b.textContent=text}
+function renderMar(){
+ const p=activePatient();
+ if(!p){document.getElementById("view").innerHTML=panel("Patient MAR","Verify a patient from Medication Administration first.");return}
+ const rows=patientMeds(p.id).map(m=>`<tr><td>${esc(m.medType||"Scheduled")}</td><td>${esc(m.scheduledTime)}</td><td><b>${esc(m.name)}</b></td><td>${esc(m.dose)}</td><td>${esc(m.route)}</td><td>${esc(m.frequency)}</td><td>${esc(m.indication||"—")}</td><td>${esc(m.provider||"—")}</td><td>${esc(m.status)}</td></tr>`).join("");
+ document.getElementById("view").innerHTML=panel(`${esc(p.name)} — Medication Administration Record`,`<table><thead><tr><th>Type</th><th>Time</th><th>Medication</th><th>Dose</th><th>Route</th><th>Frequency</th><th>Indication</th><th>Provider</th><th>Status</th></tr></thead><tbody>${rows||`<tr><td colspan="9">No medications.</td></tr>`}</tbody></table>`);
+}
+function barcodeCanvas(code){
+ const canvas=document.createElement("canvas");
+ JsBarcode(canvas,code,{format:"CODE128",displayValue:true,height:55,margin:7,fontSize:13});
+ return canvas;
+}
+function printBarcode(title,code,details=""){
+ printLabelSheet({title,code,details,labelType:"patient",size:"standard",copies:1});
+}
+function printLabelSheet({title,code,details="",labelType="medication",size="small",copies=1}){
+ const presets={
+  tiny:{widthIn:1.5,heightIn:0.75,barcodeHeight:24,fontSize:8,titleSize:8,detailSize:7},
+  small:{widthIn:2.0,heightIn:1.0,barcodeHeight:30,fontSize:9,titleSize:9,detailSize:7},
+  medium:{widthIn:2.625,heightIn:1.0,barcodeHeight:34,fontSize:10,titleSize:10,detailSize:8},
+  standard:{widthIn:3.5,heightIn:1.25,barcodeHeight:42,fontSize:11,titleSize:12,detailSize:9}
+ };
+ const p=presets[size]||presets.small;
+ const canvas=document.createElement("canvas");
+ JsBarcode(canvas,code,{
+   format:"CODE128",
+   displayValue:true,
+   height:p.barcodeHeight,
+   margin:2,
+   fontSize:p.fontSize,
+   width:size==="tiny"?1:size==="small"?1.1:1.3
+ });
+ const image=canvas.toDataURL("image/png");
+ const labelHtml=Array.from({length:Number(copies)||1},()=>`
+  <div class="label ${labelType}">
+    <div class="title">${esc(title)}</div>
+    <div class="details">${esc(details)}</div>
+    <img src="${image}">
+  </div>`).join("");
+ const w=window.open("","_blank","width=900,height=700");
+ w.document.write(`<html><head><title>Print Labels</title><style>
+ @page{margin:0.25in}
+ body{font-family:Arial;margin:0}
+ .sheet{display:flex;flex-wrap:wrap;gap:0.08in;align-content:flex-start}
+ .label{
+   width:${p.widthIn}in;height:${p.heightIn}in;
+   border:1px dashed #999;padding:0.05in;
+   display:flex;flex-direction:column;align-items:center;justify-content:center;
+   overflow:hidden;page-break-inside:avoid
+ }
+ .title{font-weight:700;font-size:${p.titleSize}px;line-height:1.05;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%}
+ .details{font-size:${p.detailSize}px;line-height:1.05;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;margin:1px 0}
+ img{max-width:95%;max-height:55%;object-fit:contain}
+ </style></head><body><div class="sheet">${labelHtml}</div><script>window.onload=()=>window.print()<\/script></body></html>`);
+ w.document.close();
+}
+
+
+let glucosePatientId=null;
+function insulinOrdersForPatient(patientId){
+ return state.medications.filter(m=>m.patientId===patientId && (m.isInsulin || /insulin/i.test(m.name||"")) && m.status!=="Discontinued");
+}
+function renderGlucoseModule(){
+ const activePatients=state.patients.filter(p=>p.active!==false);
+ if(!glucosePatientId&&activePatients.length)glucosePatientId=activePatients[0].id;
+ const p=state.patients.find(x=>x.id===glucosePatientId);
+ const insulinOrders=p?insulinOrdersForPatient(p.id):[];
+ const checks=p?state.glucoseChecks.filter(x=>x.patientId===p.id).slice().reverse():[];
+ document.getElementById("view").innerHTML=
+ panel("Blood Glucose & Insulin",`
+ <div class="grid">
+  <label>Active Patient<select id="glucosePatientSelect">${activePatients.map(x=>`<option value="${esc(x.id)}" ${x.id===glucosePatientId?"selected":""}>${esc(x.name)} — Room ${esc(x.room)}</option>`).join("")}</select></label>
+  <label>Timing<select id="glucoseTiming"><option>AC Breakfast</option><option>AC Lunch</option><option>AC Dinner</option><option>HS</option><option>PRN</option></select></label>
+  <label>Blood Glucose (mg/dL)<input id="glucoseValue" type="number" min="0" max="1000"></label>
+  <label>Source<select id="glucoseSource"><option>Fingerstick</option><option>Serum glucose</option><option>Continuous glucose monitor</option></select></label>
+  <label>Student Nurse<input id="glucoseStudent"></label>
+  <label>Date/Time<input id="glucoseTime" type="datetime-local" value="${nowLocal()}"></label>
+  <label class="wide">PRN Reason / Symptoms<input id="glucoseReason" placeholder="Symptoms, provider request, recheck after treatment..."></label>
+ </div>
+ <div id="glucoseRecommendation"></div>
+ <div class="actions" style="margin-top:10px"><button id="calculateGlucoseBtn" class="secondary">Calculate Ordered Insulin Dose</button><button id="saveGlucoseBtn" class="primary">Save Blood Glucose Check</button></div>`) +
+ panel("Active Insulin Orders", insulinOrders.length?`
+ <table><thead><tr><th>Medication</th><th>Dose</th><th>Route</th><th>Frequency</th><th>Schedule</th><th>Provider</th><th>Safety</th></tr></thead>
+ <tbody>${insulinOrders.map(m=>`<tr><td><b>${esc(m.name)}</b></td><td>${esc(m.dose)}</td><td>${esc(m.route)}</td><td>${esc(m.frequency)}</td><td>${esc((m.glucoseSchedule||["AC","HS","PRN"]).join(", "))}</td><td>${esc(m.provider||"")}</td><td><span class="allergy">High Alert</span></td></tr>`).join("")}</tbody></table>`:'<div class="safety">No active insulin order is present for this patient.</div>')+
+ panel("Blood Glucose History",`
+ <table><thead><tr><th>Date/Time</th><th>Timing</th><th>Glucose</th><th>Source</th><th>Recommended Dose</th><th>Actual Dose</th><th>Site</th><th>Student</th><th>Second Verifier</th><th>Reason / Notes</th></tr></thead>
+ <tbody>${checks.map(c=>`<tr><td>${esc(c.time)}</td><td>${esc(c.timing)}</td><td class="${c.value<70||c.value>=350?"allergy":""}">${esc(c.value)} mg/dL</td><td>${esc(c.source)}</td><td>${esc(c.recommendedDoseText||"—")}</td><td>${esc(c.actualDose||"—")}</td><td>${esc(c.site||"—")}</td><td>${esc(c.student)}</td><td>${esc(c.secondVerifier||"—")}</td><td>${esc(c.reason||"")}</td></tr>`).join("")||'<tr><td colspan="10">No blood glucose checks documented.</td></tr>'}</tbody></table>`);
+ document.getElementById("glucosePatientSelect").onchange=e=>{glucosePatientId=e.target.value;renderGlucoseModule()};
+ document.getElementById("calculateGlucoseBtn").onclick=calculateGlucoseRecommendation;
+ document.getElementById("saveGlucoseBtn").onclick=saveGlucoseCheck;
+}
+function glucoseScaleResult(patientId,value){
+ const order=insulinOrdersForPatient(patientId)[0];
+ if(!order)return {order:null,dose:null,text:"No active insulin order"};
+ const scale=order.insulinScale||[
+  {min:0,max:149,dose:0,instruction:"No insulin"},{min:150,max:199,dose:2,instruction:"Give 2 units SQ"},
+  {min:200,max:249,dose:4,instruction:"Give 4 units SQ"},{min:250,max:299,dose:6,instruction:"Give 6 units SQ"},
+  {min:300,max:349,dose:8,instruction:"Give 8 units SQ"},{min:350,max:9999,dose:10,instruction:"Give 10 units SQ and notify provider"}
+ ];
+ const row=scale.find(r=>value>=r.min&&value<=r.max);
+ return {order,dose:row?.dose??null,text:row?.instruction||"No scale result"};
+}
+function calculateGlucoseRecommendation(){
+ const value=Number(document.getElementById("glucoseValue").value),box=document.getElementById("glucoseRecommendation");
+ if(Number.isNaN(value)||value<0){box.className="safety";box.textContent="Enter a valid blood glucose value.";return}
+ const result=glucoseScaleResult(glucosePatientId,value);
+ let alertText=value<70?"CRITICAL HYPOGLYCEMIA: Hold insulin and follow the simulation hypoglycemia protocol.":value>=350?"CRITICAL HYPERGLYCEMIA: Notify the provider as ordered.":"";
+ box.className=value<70||value>=350?"safety":"success";
+ box.innerHTML=`<b>${esc(result.text)}</b>${alertText?`<br>${esc(alertText)}`:""}${result.dose>0?`<div class="grid" style="margin-top:10px">
+ <label>Actual Insulin Dose Given (units)<input id="glucoseActualDose" type="number" min="0" step="0.5" value="${result.dose}"></label>
+ <label>Injection Site<select id="glucoseSite"><option>Abdomen</option><option>Left upper arm</option><option>Right upper arm</option><option>Left thigh</option><option>Right thigh</option></select></label>
+ <label>Second Verifier<input id="glucoseVerifier"></label>
+ <label class="check"><input type="checkbox" id="glucosePatientVerified"><span>Patient barcode verified</span></label>
+ <label class="check"><input type="checkbox" id="glucoseInsulinVerified"><span>Insulin barcode verified</span></label>
+ <label class="check"><input type="checkbox" id="glucoseDoseVerified"><span>Dose independently verified</span></label></div>`:""}`;
+}
+function saveGlucoseCheck(){
+ const value=Number(document.getElementById("glucoseValue").value),timing=document.getElementById("glucoseTiming").value;
+ const source=document.getElementById("glucoseSource").value,student=document.getElementById("glucoseStudent").value.trim();
+ const time=document.getElementById("glucoseTime").value,reason=document.getElementById("glucoseReason").value.trim();
+ if(Number.isNaN(value)||value<0)return alert("Enter a valid blood glucose value.");
+ if(!student)return alert("Enter the student nurse name.");
+ if(timing==="PRN"&&!reason)return alert("Enter the reason for the PRN blood glucose check.");
+ const result=glucoseScaleResult(glucosePatientId,value);
+ const actualDoseInput=document.getElementById("glucoseActualDose"),actualDose=actualDoseInput?actualDoseInput.value:"";
+ let site="",secondVerifier="";
+ if(result.dose>0){
+  if(!document.getElementById("glucosePatientVerified")?.checked)return alert("Verify the patient barcode.");
+  if(!document.getElementById("glucoseInsulinVerified")?.checked)return alert("Verify the insulin barcode.");
+  if(!document.getElementById("glucoseDoseVerified")?.checked)return alert("Complete the independent dose verification.");
+  secondVerifier=document.getElementById("glucoseVerifier").value.trim();site=document.getElementById("glucoseSite").value;
+  if(!secondVerifier)return alert("Enter the second verifier.");if(actualDose==="")return alert("Enter the actual insulin dose given.");
+ }
+ const record={id:uid("glucose"),patientId:glucosePatientId,time,timing,source,value,student,reason,recommendedDose:result.dose,recommendedDoseText:result.text,actualDose,site,secondVerifier,insulinOrderId:result.order?.id||"",insulinName:result.order?.name||""};
+ state.glucoseChecks.push(record);
+ if(result.dose>0&&Number(actualDose)>0)state.administrations.push({id:uid("adm"),patientId:glucosePatientId,patientName:state.patients.find(p=>p.id===glucosePatientId)?.name||"",medicationId:result.order?.id||"",medication:result.order?.name||"Insulin",dose:`${actualDose} units`,route:"Subcutaneous",scheduledTime:timing,administeredAt:time,student,site,notes:`BG ${value} mg/dL; ${result.text}`,barcode:result.order?.barcode||""});
+ save();alert("Blood glucose and insulin documentation saved.");renderGlucoseModule();
+}
+
+let verifiedBloodPatient=null;
+let verifiedBloodUnit=null;
+let editingBloodId=null;
+
+const RBC_COMPATIBILITY={
+ "O-":["O-"],
+ "O+":["O-","O+"],
+ "A-":["O-","A-"],
+ "A+":["O-","O+","A-","A+"],
+ "B-":["O-","B-"],
+ "B+":["O-","O+","B-","B+"],
+ "AB-":["O-","A-","B-","AB-"],
+ "AB+":["O-","O+","A-","A+","B-","B+","AB-","AB+"]
+};
+function isBloodCompatible(patientType,unitType,product){
+ if(!patientType||!unitType)return false;
+ if(product==="Fresh Frozen Plasma"){
+   const plasma={
+    "O-":["O-","O+","A-","A+","B-","B+","AB-","AB+"],
+    "O+":["O+","A+","B+","AB+"],
+    "A-":["A-","A+","AB-","AB+"],
+    "A+":["A+","AB+"],
+    "B-":["B-","B+","AB-","AB+"],
+    "B+":["B+","AB+"],
+    "AB-":["AB-","AB+"],
+    "AB+":["AB+"]
+   };
+   return (plasma[unitType]||[]).includes(patientType);
+ }
+ if(product==="Platelets")return true;
+ return (RBC_COMPATIBILITY[patientType]||[]).includes(unitType);
+}
+function renderBloodBuilder(){
+ const b=editingBloodId?state.bloodUnits.find(x=>x.id===editingBloodId):null;
+ document.getElementById("view").innerHTML=
+ panel(b?"Edit Blood Product":"Add Blood Product",`
+ <div class="grid">
+  <label>Patient<select id="bbPatient">${patientOptions(b?.patientId||state.patients[0]?.id||"")}</select></label>
+  <label>Product<select id="bbProduct">${["Packed Red Blood Cells","Fresh Frozen Plasma","Platelets","Cryoprecipitate","Whole Blood"].map(x=>`<option ${b?.product===x?"selected":""}>${x}</option>`).join("")}</select></label>
+  <label>Unit Blood Type<select id="bbType">${["O-","O+","A-","A+","B-","B+","AB-","AB+"].map(x=>`<option ${b?.unitType===x?"selected":""}>${x}</option>`).join("")}</select></label>
+  <label>Unit Number<input id="bbUnitNumber" value="${esc(b?.unitNumber||"")}"></label>
+  <label>Expiration Date/Time<input id="bbExpiration" type="datetime-local" value="${esc(b?.expiration||"")}"></label>
+  <label>Status<select id="bbStatus">${["Available","Held","Issued","Transfusing","Completed","Discarded"].map(x=>`<option ${b?.status===x?"selected":""}>${x}</option>`).join("")}</select></label>
+  <label>Blood Barcode<input id="bbBarcode" value="${esc(b?.barcode||"")}" placeholder="Generated automatically if blank"></label>
+  <label class="wide">Special Instructions<textarea id="bbNotes">${esc(b?.notes||"")}</textarea></label>
+ </div>
+ <div class="actions" style="margin-top:10px">
+  <button id="saveBloodBtn" class="primary">${b?"Save Blood Product Changes":"Add Blood Product"}</button>
+  ${b?'<button id="cancelBloodEditBtn" class="secondary">Cancel Edit</button>':""}
+ </div>`) +
+ panel("Current Blood Products",`
+ <table><thead><tr><th>Patient</th><th>Product</th><th>Type</th><th>Unit</th><th>Expiration</th><th>Status</th><th>Barcode</th><th>Actions</th></tr></thead>
+ <tbody>${state.bloodUnits.map(x=>{const p=state.patients.find(p=>p.id===x.patientId);return `<tr class="${x.id===editingBloodId?"editRow":""}">
+ <td>${esc(p?.name||"Unknown")}</td><td>${esc(x.product)}</td><td>${esc(x.unitType)}</td><td>${esc(x.unitNumber)}</td><td>${esc(x.expiration||"—")}</td><td>${esc(x.status)}</td><td>${esc(x.barcode)}</td>
+ <td><div class="actions"><button class="secondary smallBtn editBlood" data-id="${esc(x.id)}">Edit</button><button class="dangerBtn smallBtn deleteBlood" data-id="${esc(x.id)}">Delete</button></div></td></tr>`}).join("")||'<tr><td colspan="8">No blood products entered.</td></tr>'}</tbody></table>`);
+ document.getElementById("saveBloodBtn").onclick=saveBloodFromBuilder;
+ document.getElementById("cancelBloodEditBtn")?.addEventListener("click",()=>{editingBloodId=null;renderBloodBuilder()});
+ document.querySelectorAll(".editBlood").forEach(btn=>btn.onclick=()=>{editingBloodId=btn.dataset.id;renderBloodBuilder()});
+ document.querySelectorAll(".deleteBlood").forEach(btn=>btn.onclick=()=>deleteBloodUnit(btn.dataset.id));
+}
+function saveBloodFromBuilder(){
+ const patientId=document.getElementById("bbPatient").value;
+ const product=document.getElementById("bbProduct").value;
+ const unitType=document.getElementById("bbType").value;
+ const unitNumber=document.getElementById("bbUnitNumber").value.trim();
+ const expiration=document.getElementById("bbExpiration").value;
+ const status=document.getElementById("bbStatus").value;
+ let barcode=document.getElementById("bbBarcode").value.trim();
+ const notes=document.getElementById("bbNotes").value.trim();
+ const missing=[];
+ if(!patientId)missing.push("Patient");
+ if(!product)missing.push("Product");
+ if(!unitType)missing.push("Unit blood type");
+ if(!unitNumber)missing.push("Unit number");
+ if(!expiration)missing.push("Expiration date/time");
+ if(missing.length)return alert(`Enter the following before saving:\n\n• ${missing.join("\n• ")}`);
+ if(!barcode)barcode=`BLOOD-${slugBarcode(product)}-${slugBarcode(unitType)}-${slugBarcode(unitNumber)}`;
+ const duplicate=state.bloodUnits.find(x=>x.barcode===barcode&&x.id!==editingBloodId);
+ if(duplicate)return alert("That blood barcode is already in use.");
+ const record={patientId,product,unitType,unitNumber,expiration,status,initialStatus:status,barcode,notes};
+ if(editingBloodId)Object.assign(state.bloodUnits.find(x=>x.id===editingBloodId),record);
+ else state.bloodUnits.push({id:uid("blood"),...record});
+ save();editingBloodId=null;renderBloodBuilder();
+}
+function deleteBloodUnit(id){
+ const b=state.bloodUnits.find(x=>x.id===id);
+ if(!confirm(`Delete blood unit ${b?.unitNumber||""}?`))return;
+ state.bloodUnits=state.bloodUnits.filter(x=>x.id!==id);
+ if(verifiedBloodUnit===id)verifiedBloodUnit=null;
+ save();renderBloodBuilder();
+}
+function renderBloodAdministration(){
+ const p=verifiedBloodPatient?state.patients.find(x=>x.id===verifiedBloodPatient):null;
+ const b=verifiedBloodUnit?state.bloodUnits.find(x=>x.id===verifiedBloodUnit):null;
+ document.getElementById("view").innerHTML=`
+ <div class="modeBanner">Scan the patient wristband first, then scan the blood-unit label. The system checks patient assignment, blood compatibility, expiration, and required safety steps.</div>
+ ${panel("Step 1 — Verify Patient",`<div id="bloodPatientStep" class="scanStep ${p?"complete":""}">
+  <h3>Scan patient wristband</h3><input id="bloodPatientScan" placeholder="Patient barcode or MRN" autocomplete="off">
+  <div id="bloodPatientFeedback" class="feedback hidden"></div></div>`)}
+ ${panel("Step 2 — Verify Blood Unit",`<div id="bloodUnitStep" class="scanStep ${b?"complete":""}">
+  <h3>Scan blood product barcode</h3><input id="bloodUnitScan" placeholder="Verify patient first" autocomplete="off" ${p?"":"disabled"}>
+  <div id="bloodUnitFeedback" class="feedback hidden"></div></div>`)}
+ <div id="bloodVerificationArea">${p&&b?bloodVerificationHtml(p,b):""}</div>`;
+ const ps=document.getElementById("bloodPatientScan"),us=document.getElementById("bloodUnitScan");
+ ps.onkeydown=e=>{if(e.key==="Enter"){verifyBloodPatient(ps.value.trim());ps.value=""}};
+ us.onkeydown=e=>{if(e.key==="Enter"){verifyBloodUnitScan(us.value.trim());us.value=""}};
+ setTimeout(()=>ps.focus(),50);
+}
+function verifyBloodPatient(code){
+ const p=state.patients.find(p=>(p.barcode===code||p.mrn===code)&&p.active!==false);
+ const fb=document.getElementById("bloodPatientFeedback"),step=document.getElementById("bloodPatientStep");
+ if(!p){verifiedBloodPatient=null;verifiedBloodUnit=null;step.className="scanStep error";fb.className="feedback bad";fb.textContent="PATIENT MISMATCH: Wristband not recognized.";return}
+ verifiedBloodPatient=p.id;verifiedBloodUnit=null;step.className="scanStep complete";fb.className="feedback ok";fb.textContent=`Patient verified: ${p.name}, MRN ${p.mrn}.`;
+ renderBloodAdministration();setTimeout(()=>document.getElementById("bloodUnitScan")?.focus(),50);
+}
+function verifyBloodUnitScan(code){
+ const p=state.patients.find(x=>x.id===verifiedBloodPatient);
+ const fb=document.getElementById("bloodUnitFeedback"),step=document.getElementById("bloodUnitStep");
+ const b=state.bloodUnits.find(x=>x.barcode===code);
+ if(!b){verifiedBloodUnit=null;step.className="scanStep error";fb.className="feedback bad";fb.textContent="BLOOD UNIT NOT FOUND.";return}
+ if(b.patientId!==p.id){verifiedBloodUnit=null;step.className="scanStep error";fb.className="feedback bad";fb.textContent="WRONG PATIENT: This blood unit is assigned to another patient.";return}
+ verifiedBloodUnit=b.id;step.className="scanStep complete";fb.className="feedback ok";fb.textContent=`Blood unit verified: ${b.product}, ${b.unitType}, unit ${b.unitNumber}.`;
+ document.getElementById("bloodVerificationArea").innerHTML=bloodVerificationHtml(p,b);bindBloodVerification();
+}
+function bloodVerificationHtml(p,b){
+ const compatible=isBloodCompatible(p.bloodType||"",b.unitType,b.product);
+ const expired=b.expiration&&new Date(b.expiration)<new Date();
+ return panel("Blood Safety Verification",`
+ ${!p.bloodType?'<div class="safety">PATIENT BLOOD TYPE MISSING: Enter the patient blood type before transfusion verification.</div>':""}
+ ${p.bloodType&&!compatible?`<div class="safety">INCOMPATIBLE BLOOD PRODUCT: Patient ${esc(p.bloodType)} cannot receive ${esc(b.unitType)} ${esc(b.product)}.</div>`:""}
+ ${expired?'<div class="safety">EXPIRED BLOOD PRODUCT: Do not transfuse.</div>':""}
+ ${compatible&&!expired?'<div class="success">Blood type and product compatibility verified.</div>':""}
+ <div class="grid3">
+  <div><b>Patient Blood Type</b><p>${esc(p.bloodType||"Not entered")}</p></div>
+  <div><b>Product</b><p>${esc(b.product)}</p></div>
+  <div><b>Unit Blood Type</b><p>${esc(b.unitType)}</p></div>
+  <div><b>Unit Number</b><p>${esc(b.unitNumber)}</p></div>
+  <div><b>Expiration</b><p>${esc(b.expiration)}</p></div>
+  <div><b>Status</b><p>${esc(b.status)}</p></div>
+ </div>
+ <h3>Required checks</h3>
+ <div class="checks">
+ ${["Provider order verified","Consent verified","Patient wristband matches","Blood unit label matches","ABO/Rh compatibility verified","Unit number verified","Expiration verified","Baseline vital signs obtained","IV access patent","Two-person verification completed"].map((x,i)=>`<label class="check"><input type="checkbox" class="bloodCheck" id="bloodCheck${i}"><span>${x}</span></label>`).join("")}
+ </div>
+ <div class="grid" style="margin-top:10px">
+  <label>Primary Student Nurse<input id="bloodStudent1"></label>
+  <label>Second Verifier<input id="bloodStudent2"></label>
+  <label>Start Date/Time<input id="bloodStart" type="datetime-local" value="${nowLocal()}"></label>
+  <label>IV Site / Line<input id="bloodSite"></label>
+  <label>Baseline Vitals<input id="bloodVitals" placeholder="T, HR, RR, BP, SpO₂"></label>
+  <label>Notes<input id="bloodNotes"></label>
+ </div>
+ <div class="actions" style="margin-top:10px">
+  <button id="startBloodBtn" class="primary" ${(!compatible||expired||!p.bloodType)?"disabled":""}>Start Blood Administration</button>
+  <button id="cancelBloodBtn" class="secondary">Cancel</button>
+ </div>
+ <div id="bloodAdminFeedback"></div>`);
+}
+function bindBloodVerification(){
+ document.getElementById("cancelBloodBtn").onclick=()=>{verifiedBloodUnit=null;renderBloodAdministration()};
+ document.getElementById("startBloodBtn").onclick=startBloodAdministration;
+}
+function startBloodAdministration(){
+ const p=state.patients.find(x=>x.id===verifiedBloodPatient),b=state.bloodUnits.find(x=>x.id===verifiedBloodUnit);
+ if([...document.querySelectorAll(".bloodCheck")].some(c=>!c.checked))return showBloodFeedback("Complete all required blood safety checks.",false);
+ const student1=document.getElementById("bloodStudent1").value.trim(),student2=document.getElementById("bloodStudent2").value.trim();
+ if(!student1||!student2)return showBloodFeedback("Enter both the primary student and second verifier.",false);
+ const record={id:uid("bloodAdmin"),patientId:p.id,patientName:p.name,mrn:p.mrn,bloodUnitId:b.id,product:b.product,unitType:b.unitType,unitNumber:b.unitNumber,barcode:b.barcode,startedAt:document.getElementById("bloodStart").value,student1,student2,site:document.getElementById("bloodSite").value.trim(),baselineVitals:document.getElementById("bloodVitals").value.trim(),notes:document.getElementById("bloodNotes").value.trim(),status:"Started"};
+ state.bloodAdministrations.push(record);b.status="Transfusing";save();showBloodFeedback("Blood administration started and documented.",true);verifiedBloodUnit=null;setTimeout(renderBloodAdministration,1200);
+}
+function showBloodFeedback(text,ok){const b=document.getElementById("bloodAdminFeedback");b.className=ok?"success":"safety";b.textContent=text}
+
+function renderBarcodes(){
+ document.getElementById("view").innerHTML=panel("Barcode Center",`
+ <div class="modeBanner">Barcodes are generated automatically for every patient and medication. Medication labels can be printed in compact sizes for medication cups, syringes, bags, vials, and simulation containers.</div>
+ <h3>Patient Wristbands</h3>
+ ${state.patients.map(p=>`<div class="barcodeCard">
+   <b>${esc(p.name)}</b>
+   <p>${esc(p.mrn)} • DOB ${esc(p.dob)} • Room ${esc(p.room)} • Provider ${esc(p.provider)}</p>
+   <div class="labelControls">
+    <label>Label Size<select class="patientLabelSize" data-id="${esc(p.id)}">
+      <option value="standard">Wristband / Standard</option>
+      <option value="medium">Medium</option>
+      <option value="small">Small</option>
+    </select></label>
+    <label>Copies<input class="patientLabelCopies" data-id="${esc(p.id)}" type="number" min="1" max="50" value="1"></label>
+    <div style="align-self:end"><button class="secondary printPatientLabel" data-id="${esc(p.id)}">Print Patient Barcode</button></div>
+   </div>
+   <div class="compactNote">Barcode: ${esc(p.barcode)}</div>
+ </div>`).join("")}
+ <h3>Medication Labels</h3>
+ ${state.medications.map(m=>{
+   const p=state.patients.find(x=>x.id===m.patientId);
+   return `<div class="barcodeCard">
+    <b>${esc(m.name)} ${esc(m.dose)}</b>
+    <p>${esc(m.route)} • ${esc(m.frequency)} • Patient: ${esc(p?.name||"Unknown")}</p>
+    <div class="labelControls">
+      <label>Label Size<select class="medLabelSize" data-id="${esc(m.id)}">
+        <option value="tiny">Tiny — 1.5 × 0.75 in</option>
+        <option value="small" selected>Small — 2 × 1 in</option>
+        <option value="medium">Medium — 2.625 × 1 in</option>
+        <option value="standard">Standard — 3.5 × 1.25 in</option>
+      </select></label>
+      <label>Copies<input class="medLabelCopies" data-id="${esc(m.id)}" type="number" min="1" max="100" value="6"></label>
+      <div style="align-self:end"><button class="primary printMedicationLabel" data-id="${esc(m.id)}">Print Medication Labels</button></div>
+    </div>
+    <div class="compactNote">Barcode: ${esc(m.barcode)}</div>
+   </div>`;
+ }).join("")||"<p>No medications entered.</p>"}
+ <h3>Blood Product Labels</h3>
+ ${state.bloodUnits.map(b=>{
+   const p=state.patients.find(x=>x.id===b.patientId);
+   return `<div class="barcodeCard">
+    <b>${esc(b.product)} — ${esc(b.unitType)} — Unit ${esc(b.unitNumber)}</b>
+    <p>Patient: ${esc(p?.name||"Unknown")} • Expires: ${esc(b.expiration||"—")}</p>
+    <div class="labelControls">
+      <label>Label Size<select class="bloodLabelSize" data-id="${esc(b.id)}">
+        <option value="small" selected>Small — 2 × 1 in</option>
+        <option value="medium">Medium — 2.625 × 1 in</option>
+        <option value="standard">Standard — 3.5 × 1.25 in</option>
+      </select></label>
+      <label>Copies<input class="bloodLabelCopies" data-id="${esc(b.id)}" type="number" min="1" max="50" value="2"></label>
+      <div style="align-self:end"><button class="primary printBloodLabel" data-id="${esc(b.id)}">Print Blood Labels</button></div>
+    </div>
+    <div class="compactNote">Barcode: ${esc(b.barcode)}</div>
+   </div>`;
+ }).join("")||"<p>No blood products entered.</p>"}
+`);
+ document.querySelectorAll(".printPatientLabel").forEach(b=>b.onclick=()=>{
+   const p=state.patients.find(x=>x.id===b.dataset.id);
+   const size=document.querySelector(`.patientLabelSize[data-id="${b.dataset.id}"]`).value;
+   const copies=document.querySelector(`.patientLabelCopies[data-id="${b.dataset.id}"]`).value;
+   printLabelSheet({
+     title:p.name,
+     code:p.barcode,
+     details:`MRN ${p.mrn} | DOB ${p.dob} | Room ${p.room} | ${p.provider}`,
+     labelType:"patient",size,copies
+   });
+ });
+ document.querySelectorAll(".printMedicationLabel").forEach(b=>b.onclick=()=>{
+   const m=state.medications.find(x=>x.id===b.dataset.id);
+   const p=state.patients.find(x=>x.id===m.patientId);
+   const size=document.querySelector(`.medLabelSize[data-id="${b.dataset.id}"]`).value;
+   const copies=document.querySelector(`.medLabelCopies[data-id="${b.dataset.id}"]`).value;
+   printLabelSheet({
+     title:`${m.name} ${m.dose}`,
+     code:m.barcode,
+     details:`${m.route} | ${m.frequency} | ${p?.name||""}`,
+     labelType:"medication",size,copies
+   });
+ });
+ document.querySelectorAll(".printBloodLabel").forEach(btn=>btn.onclick=()=>{
+   const b=state.bloodUnits.find(x=>x.id===btn.dataset.id);
+   const p=state.patients.find(x=>x.id===b.patientId);
+   const size=document.querySelector(`.bloodLabelSize[data-id="${btn.dataset.id}"]`).value;
+   const copies=document.querySelector(`.bloodLabelCopies[data-id="${btn.dataset.id}"]`).value;
+   printLabelSheet({
+     title:`${b.product} ${b.unitType}`,
+     code:b.barcode,
+     details:`Unit ${b.unitNumber} | ${p?.name||""} | Exp ${b.expiration||""}`,
+     labelType:"blood",size,copies
+   });
+ });
+}
+function renderHistory(){
+ const rows=state.administrations.slice().reverse().map(a=>`<tr><td>${esc(a.administeredAt)}</td><td>${esc(a.patientName)}</td><td>${esc(a.medication)} ${esc(a.dose)}</td><td>${esc(a.route)}</td><td>${esc(a.student)}</td><td>${esc(a.site)}</td><td>${esc(a.notes)}</td></tr>`).join("");
+ document.getElementById("view").innerHTML=panel("Medication Administration History",`<table><thead><tr><th>Date/Time</th><th>Patient</th><th>Medication</th><th>Route</th><th>Student</th><th>Site</th><th>Notes</th></tr></thead><tbody>${rows||`<tr><td colspan="7">No administrations documented.</td></tr>`}</tbody></table>`);
+}
+function renderSettings(){
+ document.getElementById("view").innerHTML=panel("Notion Connection",`
+ <div class="modeBanner">Do not place a Notion secret token in this webpage. The app sends documentation to a secure bridge URL that stores the token on the server.</div>
+ <div class="grid">
+ <label>Notion Bridge URL<input id="bridgeUrl" value="${esc(state.settings.bridgeUrl)}" placeholder="https://your-worker.workers.dev"></label>
+ <label>Connection Mode<select id="notionEnabled"><option value="false">Local demonstration mode</option><option value="true">Send administrations to Notion</option></select></label>
+ </div>
+ <div class="actions" style="margin-top:10px">
+ <button id="saveSettings" class="primary">Save Connection Settings</button>
+ <button id="settingsBackupBtn" class="secondary">Download Data Backup</button>
+ <button id="settingsRestoreBtn" class="secondary">Restore Data Backup</button>
+ <input id="settingsRestoreFile" type="file" accept=".json,application/json" class="hidden">
+ <button id="resetAllSimulationsSettings" class="secondary">Reset All Patient Simulations</button>
+ <button id="resetDemo" class="dangerBtn">Delete All Local Data</button>
+ </div>
+ <div class="storageHelp"><b>How saving works:</b><br>
+ Data is saved only in this browser and website address. Always open the same GitHub Pages URL in the same browser. Do not use private/incognito mode. Download a backup after building or changing a patient MAR.</div>
+ <p class="note">The Faculty Builder saves patients and medication orders in this browser. The included notion-worker.js is a starter secure bridge for completed administrations. Add your Notion token and Medication Administration database ID as protected environment variables on the hosting service.</p>`);
+ document.getElementById("notionEnabled").value=String(state.settings.notionEnabled);
+ document.getElementById("saveSettings").onclick=()=>{state.settings.bridgeUrl=document.getElementById("bridgeUrl").value.trim();state.settings.notionEnabled=document.getElementById("notionEnabled").value==="true";save();updateConnectionBadge();alert("Connection settings saved.")};
+ document.getElementById("settingsBackupBtn").onclick=downloadDataBackup;
+ document.getElementById("settingsRestoreBtn").onclick=()=>document.getElementById("settingsRestoreFile").click();
+ document.getElementById("settingsRestoreFile").onchange=e=>{if(e.target.files?.[0])restoreDataBackup(e.target.files[0])};
+ document.getElementById("resetAllSimulationsSettings").onclick=()=>{
+   if(!confirm("Reset every patient simulation while keeping all patients and medication orders?"))return;
+   state.medications.forEach(m=>m.status=m.initialStatus||"Due");
+   state.administrations=[];state.bloodUnits.forEach(b=>b.status=b.initialStatus||"Available");state.bloodAdministrations=[];state.glucoseChecks=[];
+   verifiedPatient=null;verifiedMedication=null;save();alert("All simulations reset.");renderSettings();
+ };
+ document.getElementById("resetDemo").onclick=()=>{if(confirm("DELETE all local patients, medications, and administration records? This cannot be undone.")){localStorage.removeItem(STORAGE_KEY);location.reload()}};
+}
+function updateConnectionBadge(){
+ const b=document.getElementById("connectionBadge");
+ b.textContent=state.settings.notionEnabled&&state.settings.bridgeUrl?"Notion Write-Back Enabled":"Local Demonstration Mode";
+}
+document.querySelectorAll("aside button").forEach(b=>b.onclick=()=>{currentView=b.dataset.view;render()});
+updateConnectionBadge();verifyStoredData();render();
+setTimeout(()=>updateSaveStatus(true,`${state.patients.length} patients • ${state.medications.length} meds loaded`),100);
+</script>
+</body>
+</html>
