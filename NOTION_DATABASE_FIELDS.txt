@@ -1,0 +1,60 @@
+NOTION DATABASE: Medication Administrations
+
+Create a full-page or inline Notion database with these exact property names:
+
+Name
+- Type: Title
+
+Patient Name
+- Type: Text
+
+MRN
+- Type: Text
+
+Medication
+- Type: Text
+
+Dose
+- Type: Text
+
+Route
+- Type: Select
+- Suggested options: PO, IV, IVPB, IM, Subcutaneous, IV infusion, Other
+
+Scheduled Time
+- Type: Text
+
+Administered At
+- Type: Date
+
+Student Nurse
+- Type: Text
+
+Site / Line
+- Type: Text
+
+Notes
+- Type: Text
+
+Barcode
+- Type: Text
+
+Status
+- Type: Select
+- Required option: Given
+
+Optional properties you may add later:
+Patient
+- Type: Relation to a Patients database
+
+Medication Order
+- Type: Relation to the patient MAR or Orders database
+
+Simulation Shift
+- Type: Select
+
+Release Stage
+- Type: Select
+
+Instructor Review
+- Type: Checkbox
